@@ -77,32 +77,32 @@ A seguir estão playlists/vídeos de projetos de turmas anteriores. Use como ref
 
 </div>
 
-??? info "Ver vídeos embutidos (player)"
+
+??? info "Ver projetos embutidos (player)"
     <iframe width="100%" height="420"
-        src="https://www.youtube.com/watch?v=znwVRa8RSHM&list=PLVU3UhXa4-X_yYRMpRoFiTtvv13FEdHaw&index=3"
+        src="https://youtu.be/znwVRa8RSHM?si=3Dx9awQxevQoyMN9"
         title="Projeto 1"
         frameborder="0"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen></iframe>
 
     <iframe width="100%" height="420"
-        src="https://www.youtube.com/watch?v=y6fS__BI33s&list=PLVU3UhXa4-X-xSRHE_0zGpH64yMK-_5Ra"
+        src="https://www.youtube.com/embed/y6fS__BI33s"
         title="Projeto 2"
         frameborder="0"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen></iframe>
 
     <iframe width="100%" height="420"
-        src="https://www.youtube.com/watch?v=m_PxgEP4mB8&list=PLVU3UhXa4-X-xSRHE_0zGpH64yMK-_5Ra&index=2"
+        src="https://www.youtube.com/embed/m_PxgEP4mB8"
         title="Projeto 3"
         frameborder="0"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen></iframe>
 
     <iframe width="100%" height="420"
-        src="https://www.youtube.com/watch?v=a_K95vKyil4&list=PLVU3UhXa4-X-xSRHE_0zGpH64yMK-_5Ra&index=3"
+        src="https://www.youtube.com/embed/a_K95vKyil4"
         title="Projeto 4"
         frameborder="0"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen></iframe>
-
