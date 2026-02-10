@@ -80,7 +80,7 @@ A seguir estão playlists/vídeos de projetos de turmas anteriores. Use como ref
 
 ??? info "Ver projetos embutidos (player)"
     <iframe width="100%" height="420"
-        src="https://youtu.be/znwVRa8RSHM?si=3Dx9awQxevQoyMN9"
+        src="https://www.youtube.com/embed/znwVRa8RSHM"
         title="Projeto 1"
         frameborder="0"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
