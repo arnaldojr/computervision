@@ -1,0 +1,110 @@
+site_name: Visão Computacional Aplicada
+site_dir: site
+site_url: https://arnaldojr.github.io/computervision/
+repo_url: https://github.com/arnaldojr/computervision
+repo_name: arnaldojr/computervision
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: pt-BR
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tooltips 
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search
+  - mkdocs_quiz
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - minify:
+      minify_html: true
+
+nav:
+  - Início: index.md
+  - Agenda: agenda/agenda.md
+  - Sobre a Disciplina:
+    - Objetivos: sobre/objetivos.md
+    - Conteúdo Programático: sobre/conteudo.md
+    - Metodologia: sobre/metodologia.md
+    - Avaliação: sobre/avaliacao.md
+  - Aulas Práticas:
+    - Introdução: aulas/intro/index.md
+    # - Lab01 - Intro PID: aulas/lab01/IntroPID.ipynb
+    # - Lab02 - Seguimentação por pixel: aulas/lab02/atividade2.ipynb
+    # - Lab03 - Histograma e equalização: aulas/lab03/atividade3.ipynb
+    # - Lab04 - Filtros de Convolução: aulas/lab04/Filtros_de_Convolução.ipynb
+    # - Lab05 - Espaço de cor e contorno: aulas/lab05/Espaço-cor-contorno.ipynb   
+    - Aula 1 - Pipeline Profissional: aulas/aula1.md
+    # - Aula 2 - Processamento Aplicado: aulas/aula2.md
+    # - Aula 3 - Segmentação: aulas/aula3.md
+    # - Aula 4 - CP1: aulas/cp1.md
+    # - Aula 5 - Feature Extraction: aulas/aula5.md
+    # - Aula 6 - Classificação ML: aulas/aula6.md
+    # - Aula 7 - API para CV: aulas/aula7.md
+    # - Aula 8 - CP2: aulas/aula8.md
+    # - Aula 9 - CNN Prática: aulas/aula9.md
+    # - Aula 10 - Detecção Moderna: aulas/aula10.md
+    # - Aula 11 - Deploy: aulas/aula11.md
+    # - CP3 - Projeto Final: aulas/cp3.md
+  - Recursos:
+    - Bibliografia: recursos/bibliografia.md
+    - Ferramentas: recursos/ferramentas.md
