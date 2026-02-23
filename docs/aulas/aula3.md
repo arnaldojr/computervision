@@ -1,548 +1,266 @@
-# Aula 3 - Segmentação e Detecção Baseada em Regras
+# Aula 3 — Filtros de Convolução: blur, realce, bordas, limiarização e blending
 
-## Objetivo da Aula
+Nesta aula você vai entender (de verdade) o que é **um filtro de convolução** e por que quase toda pipeline de Visão Computacional começa com alguma forma de **suavização**, **realce** ou **detecção de bordas**.
 
-Implementar técnicas de segmentação e detecção de objetos baseadas em regras, criando funções reutilizáveis e desenvolvendo um sistema que comece a parecer um produto real.
+[Lab03 — Filtros de Convolução (Notebook)](lab04/arquivolab4.zip){ .md-button .md-button-primary }
 
-## Conteúdo Teórico
+A meta aqui não é “decorar kernels”, e sim enxergar o padrão: **kernel + varredura + regra local** → efeito global na imagem.
 
-### Threshold (Limiarização)
+---
 
-A limiarização é uma técnica fundamental de segmentação que converte uma imagem em escala de cinza em uma imagem binária, separando objetos de fundo com base em um valor de limiar.
+## Objetivos de aprendizagem
 
-Tipos comuns:
-- **Limiar Global**: Um único valor para toda a imagem
-- **Limiar Adaptativo**: Valores diferentes para diferentes regiões
-- **Otsu's Method**: Método que automaticamente determina o melhor limiar
+Ao final da aula, você deve ser capaz de:
 
-### Contornos
+1. Explicar o processo **genérico** de filtragem por kernel no domínio espacial.
+2. Diferenciar **convolução** e **correlação** (e saber quando isso importa).
+3. Aplicar e comparar filtros de **blurring** (média, gaussiano).
+4. Aplicar filtros de **sharpening** (realce) e entender o papel de valores negativos no kernel.
+5. Usar detectores de bordas (Sobel/Laplaciano) e o **Canny** (com ajuste de limiares).
+6. Aplicar **limiarização** (threshold) e interpretar seus modos.
+7. Fazer **blending** (sobreposição) e combinar com filtros.
+8. Processar **vídeo frame a frame** aplicando convolução em tempo real.
 
-Contornos são curvas que conectam pontos contínuos de mesma intensidade, úteis para:
-- Detecção de formas
-- Análise de componentes conectados
-- Extração de características de objetos
+---
 
-### Bounding Boxes
+## 1) Pré-requisitos mínimos (para não errar “besteira”)
 
-Retângulos que delimitam objetos detectados, fundamentais para:
-- Localização de objetos
-- Contagem de instâncias
-- Extração de regiões de interesse
+### 1.1 Imagem como matriz (revisão rápida)
+- Imagem em tons de cinza: `img.shape == (H, W)`
+- Imagem colorida (OpenCV): `img.shape == (H, W, 3)` e **ordem BGR** (não RGB)
 
-### Máscaras
+!!! warning "OpenCV usa BGR"
+    Se você pegar um kernel “por canal” ou fizer blending de imagens coloridas, lembre que o OpenCV lê como **BGR** por padrão.
 
-Imagens binárias que indicam quais pixels pertencem a um objeto de interesse, usadas para:
-- Segmentação de objetos
-- Extração de regiões específicas
-- Aplicação de operações apenas em áreas específicas
+### 1.2 `dtype` e saturação (uint8)
+Filtros podem gerar valores **negativos** ou **maiores que 255**. Em `uint8`, isso pode “estourar” e causar resultado estranho.
 
-## Atividade Prática
+!!! tip "Regra de ouro para depurar"
+    Durante testes, converta temporariamente para `float32`, aplique o filtro e **normalize** ou faça `clip` antes de voltar para `uint8`.
 
-### Implementar Técnicas de Threshold
+---
 
-```python
-# src/features/thresholding.py
-import cv2
-import numpy as np
+## 2) A ideia central: kernel + vizinhança + soma ponderada
 
-def global_threshold(image, threshold_value=127, max_value=255, method='binary'):
-    """Aplica threshold global à imagem"""
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
-    
-    if method == 'binary':
-        _, binary = cv2.threshold(gray, threshold_value, max_value, cv2.THRESH_BINARY)
-    elif method == 'binary_inv':
-        _, binary = cv2.threshold(gray, threshold_value, max_value, cv2.THRESH_BINARY_INV)
-    elif method == 'truncate':
-        _, binary = cv2.threshold(gray, threshold_value, max_value, cv2.THRESH_TRUNC)
-    elif method == 'tozero':
-        _, binary = cv2.threshold(gray, threshold_value, max_value, cv2.THRESH_TOZERO)
-    elif method == 'tozero_inv':
-        _, binary = cv2.threshold(gray, threshold_value, max_value, cv2.THRESH_TOZERO_INV)
-    else:
-        raise ValueError("Método de threshold não suportado")
-    
-    return binary
+Um **kernel** (ou máscara) é uma pequena matriz (3×3, 5×5, 7×7…) que define como cada pixel será recalculado com base na sua **vizinhança**.
 
-def adaptive_threshold(image, max_value=255, adaptive_method='mean', threshold_type='binary', block_size=11, c=2):
-    """Aplica threshold adaptativo à imagem"""
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
-    
-    if adaptive_method == 'mean':
-        adaptive_method_cv = cv2.ADAPTIVE_THRESH_MEAN_C
-    elif adaptive_method == 'gaussian':
-        adaptive_method_cv = cv2.ADAPTIVE_THRESH_GAUSSIAN_C
-    else:
-        raise ValueError("Método adaptativo não suportado")
-    
-    if threshold_type == 'binary':
-        threshold_type_cv = cv2.THRESH_BINARY
-    elif threshold_type == 'binary_inv':
-        threshold_type_cv = cv2.THRESH_BINARY_INV
-    else:
-        raise ValueError("Tipo de threshold não suportado")
-    
-    return cv2.adaptiveThreshold(gray, max_value, adaptive_method_cv, threshold_type_cv, block_size, c)
+Intuição:
+- O kernel “passa por baixo” da imagem.
+- Em cada posição, você faz uma **soma ponderada** (produto elemento a elemento + soma).
+- O resultado vira o novo valor do pixel central.
 
-def otsu_threshold(image, max_value=255):
-    """Aplica threshold de Otsu (automaticamente determina o melhor limiar)"""
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
+!!! info "Convolução vs correlação (o detalhe que confunde)"
+    - **Correlação**: aplica o kernel “como ele é”.
+    - **Convolução**: aplica o kernel **invertido** (espelhado).
     
-    _, binary = cv2.threshold(gray, 0, max_value, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    
-    return binary, _
-```
+    Na prática, em PDI muitos kernels são **simétricos**, então o resultado é o mesmo e as bibliotecas costumam implementar o comportamento como correlação.
 
-### Implementar Detecção de Contornos
+---
 
-```python
-# src/features/contours.py
-import cv2
-import numpy as np
+## 3) Parte A — Filtros de Blurring (suavização)
 
-def find_contours(binary_image, retrieval_mode='external', approximation_method='simple'):
-    """Encontra contornos em uma imagem binária"""
-    if retrieval_mode == 'external':
-        retrieval_mode_cv = cv2.RETR_EXTERNAL
-    elif retrieval_mode == 'list':
-        retrieval_mode_cv = cv2.RETR_LIST
-    elif retrieval_mode == 'ccomp':
-        retrieval_mode_cv = cv2.RETR_CCOMP
-    elif retrieval_mode == 'tree':
-        retrieval_mode_cv = cv2.RETR_TREE
-    else:
-        raise ValueError("Modo de recuperação não suportado")
-    
-    if approximation_method == 'none':
-        approx_method_cv = cv2.CHAIN_APPROX_NONE
-    elif approximation_method == 'simple':
-        approx_method_cv = cv2.CHAIN_APPROX_SIMPLE
-    elif approximation_method == 'tc89_l1':
-        approx_method_cv = cv2.CHAIN_APPROX_TC89_L1
-    elif approximation_method == 'tc89_kcos':
-        approx_method_cv = cv2.CHAIN_APPROX_TC89_KCOS
-    else:
-        raise ValueError("Método de aproximação não suportado")
-    
-    contours, hierarchy = cv2.findContours(binary_image, retrieval_mode_cv, approx_method_cv)
-    
-    return contours, hierarchy
+**O que faz:** reduz ruído, “alisa” a imagem, diminui detalhes finos.
 
-def filter_contours_by_area(contours, min_area=0, max_area=float('inf')):
-    """Filtra contornos por área"""
-    filtered_contours = []
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        if min_area <= area <= max_area:
-            filtered_contours.append(contour)
-    
-    return filtered_contours
+### 3.1 Média (box filter)
+Kernel típico 3×3:
+\[
+\frac{1}{9}
+\begin{bmatrix}
+1 & 1 & 1\\
+1 & 1 & 1\\
+1 & 1 & 1
+\end{bmatrix}
+\]
 
-def filter_contours_by_circularity(contours, min_circularity=0, max_circularity=1):
-    """Filtra contornos por circularidade (4*pi*area/perimeter^2)"""
-    filtered_contours = []
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        perimeter = cv2.arcLength(contour, True)
-        
-        if perimeter == 0:
-            continue
-            
-        circularity = 4 * np.pi * area / (perimeter * perimeter)
-        
-        if min_circularity <= circularity <= max_circularity:
-            filtered_contours.append(contour)
-    
-    return filtered_contours
+**Intuição:** todo mundo pesa igual.
 
-def filter_contours_by_aspect_ratio(contours, min_ratio=0, max_ratio=float('inf')):
-    """Filtra contornos por razão de aspecto (largura/altura do bounding rectangle)"""
-    filtered_contours = []
-    for contour in contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        aspect_ratio = float(w) / h
-        
-        if min_ratio <= aspect_ratio <= max_ratio:
-            filtered_contours.append(contour)
-    
-    return filtered_contours
+### 3.2 Gaussiano
+Parecido com média, mas o centro pesa mais.
 
-def get_contour_properties(contour):
-    """Obtém propriedades de um contorno"""
-    properties = {}
-    
-    # Área
-    properties['area'] = cv2.contourArea(contour)
-    
-    # Perímetro
-    properties['perimeter'] = cv2.arcLength(contour, True)
-    
-    # Bounding rectangle
-    x, y, w, h = cv2.boundingRect(contour)
-    properties['bounding_rect'] = {'x': x, 'y': y, 'width': w, 'height': h}
-    
-    # Bounding rectangle rotacionado
-    rect = cv2.minAreaRect(contour)
-    box = cv2.boxPoints(rect)
-    box = np.int0(box)
-    properties['rotated_rect'] = box
-    
-    # Circularity
-    if properties['perimeter'] > 0:
-        properties['circularity'] = 4 * np.pi * properties['area'] / (properties['perimeter'] * properties['perimeter'])
-    else:
-        properties['circularity'] = 0
-    
-    # Extent (razão entre área do contorno e área do bounding rectangle)
-    properties['extent'] = properties['area'] / float(w * h)
-    
-    # Centroide
-    moments = cv2.moments(contour)
-    if moments['m00'] != 0:
-        cx = int(moments['m10'] / moments['m00'])
-        cy = int(moments['m01'] / moments['m00'])
-        properties['centroid'] = (cx, cy)
-    else:
-        properties['centroid'] = (0, 0)
-    
-    return properties
-```
+**Intuição:** suaviza sem “destruir” tanto as bordas quanto o box filter.
 
-### Implementar Bounding Boxes e Máscaras
+!!! tip "Tamanho do kernel importa"
+- Kernel maior → blur mais forte (mais perda de detalhe)
+- Kernel menor → blur mais leve
 
-```python
-# src/features/bounding_boxes.py
-import cv2
-import numpy as np
+#### Quiz (rápido)
+<quiz>
+<question>
+Em um kernel de suavização “bem comportado”, a soma dos coeficientes deve ser:
+</question>
+<answer type="A">0</answer>
+<answer type="B" correct="true">1 (ou normalizada para 1)</answer>
+<answer type="C">255</answer>
+<answer type="D">Depende do formato da imagem</answer>
+</quiz>
 
-def draw_bounding_boxes(image, contours, color=(0, 255, 0), thickness=2):
-    """Desenha bounding boxes ao redor dos contornos"""
-    result = image.copy()
-    
-    for contour in contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(result, (x, y), (x + w, y + h), color, thickness)
-    
-    return result
+### 3.3 Exercícios do notebook
+#### Desafio 1 — Estudo de blurring
+- Escolha uma imagem.
+- Compare filtros de borramento e **varie o tamanho do kernel**.
+- Escreva 2–3 linhas do que você observou (detalhe, ruído, bordas).
 
-def draw_rotated_bounding_boxes(image, contours, color=(0, 255, 255), thickness=2):
-    """Desenha bounding boxes rotacionadas ao redor dos contornos"""
-    result = image.copy()
-    
-    for contour in contours:
-        rect = cv2.minAreaRect(contour)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        cv2.drawContours(result, [box], 0, color, thickness)
-    
-    return result
+---
 
-def get_bounding_boxes(contours):
-    """Obtém as coordenadas das bounding boxes para cada contorno"""
-    boxes = []
-    for contour in contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        boxes.append({'x': x, 'y': y, 'width': w, 'height': h})
-    
-    return boxes
+## 4) Parte B — Sharpening (realce)
 
-def create_masks_from_contours(image_shape, contours):
-    """Cria máscaras binárias para cada contorno"""
-    masks = []
-    
-    for contour in contours:
-        mask = np.zeros(image_shape[:2], dtype=np.uint8)
-        cv2.fillPoly(mask, [contour], 255)
-        masks.append(mask)
-    
-    return masks
+**O que faz:** enfatiza detalhes e bordas (aumenta contraste local).
 
-def extract_roi(image, bounding_box):
-    """Extrai região de interesse (ROI) baseada em bounding box"""
-    x, y, w, h = bounding_box['x'], bounding_box['y'], bounding_box['width'], bounding_box['height']
-    return image[y:y+h, x:x+w]
+Um kernel clássico 3×3 (exemplo):
+\[
+\begin{bmatrix}
+0 & -1 & 0\\
+-1 & 5 & -1\\
+0 & -1 & 0
+\end{bmatrix}
+\]
 
-def create_combined_mask(image_shape, contours):
-    """Cria uma máscara combinada para todos os contornos"""
-    combined_mask = np.zeros(image_shape[:2], dtype=np.uint8)
-    
-    for contour in contours:
-        cv2.fillPoly(combined_mask, [contour], 255)
-    
-    return combined_mask
-```
+**Intuição:** você “pune” vizinhos e “recompensa” o centro.
 
-### Detector de Objetos por Cor
+!!! warning "Sharpening amplifica ruído"
+Se a imagem já tiver ruído, sharpening pode piorar. Muitas pipelines fazem:
+1) blur leve → 2) sharpening → 3) pós-processamento
 
-```python
-# src/features/color_detector.py
-import cv2
-import numpy as np
+#### Quiz (rápido)
+<quiz>
+<question>
+Por que kernels de realce costumam ter valores negativos?
+</question>
+<answer type="A">Para reduzir o tamanho da imagem</answer>
+<answer type="B">Porque OpenCV exige valores negativos</answer>
+<answer type="C" correct="true">Para subtrair contribuição de vizinhos e aumentar contraste local</answer>
+<answer type="D">Para converter BGR em RGB</answer>
+</quiz>
 
-class ColorDetector:
-    def __init__(self):
-        self.color_ranges = {
-            'red': [(0, 50, 50), (10, 255, 255), (170, 50, 50), (180, 255, 255)],  # Precisa de dois ranges para vermelho
-            'green': [(40, 50, 50), (80, 255, 255)],
-            'blue': [(100, 50, 50), (130, 255, 255)],
-            'yellow': [(20, 50, 50), (40, 255, 255)],
-            'purple': [(130, 50, 50), (160, 255, 255)],
-            'orange': [(10, 50, 50), (20, 255, 255)],
-        }
-    
-    def detect_by_color_range(self, image, color_name, min_area=100):
-        """Detecta objetos de uma cor específica"""
-        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        
-        if color_name not in self.color_ranges:
-            raise ValueError(f"Cor '{color_name}' não suportada")
-        
-        color_range = self.color_ranges[color_name]
-        
-        if color_name == 'red':
-            # Vermelho tem dois ranges no HSV
-            lower1, upper1 = color_range[0], color_range[1]
-            lower2, upper2 = color_range[2], color_range[3]
-            
-            mask1 = cv2.inRange(hsv, lower1, upper1)
-            mask2 = cv2.inRange(hsv, lower2, upper2)
-            mask = mask1 + mask2
-        else:
-            lower, upper = color_range[0], color_range[1]
-            mask = cv2.inRange(hsv, lower, upper)
-        
-        # Aplicar operações morfológicas para limpar a máscara
-        kernel = np.ones((5,5), np.uint8)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-        
-        # Encontrar contornos
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Filtrar por área mínima
-        filtered_contours = [c for c in contours if cv2.contourArea(c) >= min_area]
-        
-        return filtered_contours, mask
-    
-    def detect_multiple_colors(self, image, colors, min_area=100):
-        """Detecta múltiplas cores na mesma imagem"""
-        results = {}
-        
-        for color in colors:
-            contours, mask = self.detect_by_color_range(image, color, min_area)
-            results[color] = {
-                'contours': contours,
-                'mask': mask,
-                'count': len(contours)
-            }
-        
-        return results
-    
-    def draw_color_detections(self, image, detection_results):
-        """Desenha detecções de cores na imagem"""
-        result_image = image.copy()
-        
-        # Cores para desenho (BGR)
-        colors_bgr = {
-            'red': (0, 0, 255),
-            'green': (0, 255, 0),
-            'blue': (255, 0, 0),
-            'yellow': (0, 255, 255),
-            'purple': (128, 0, 128),
-            'orange': (0, 165, 255)
-        }
-        
-        for color_name, data in detection_results.items():
-            contours = data['contours']
-            color_bgr = colors_bgr.get(color_name, (255, 255, 255))  # Branco padrão
-            
-            # Desenhar contornos
-            cv2.drawContours(result_image, contours, -1, color_bgr, 2)
-            
-            # Desenhar bounding boxes
-            for contour in contours:
-                x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(result_image, (x, y), (x+w, y+h), color_bgr, 2)
-                
-                # Adicionar texto com nome da cor e contagem
-                cv2.putText(result_image, f'{color_name}', (x, y-10), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_bgr, 1)
-        
-        return result_image
-```
+### 4.1 Exercícios do notebook
+#### Desafio 2 — Estudo de contraste/realce
+- Escolha uma imagem.
+- Teste kernels de realce (sharpen) e **varie o tamanho do kernel** quando aplicável.
+- Compare: “ficou mais nítido” vs “ficou mais ruidoso”.
 
-### Sistema de Contagem Automática
+---
 
-```python
-# src/features/object_counter.py
-import cv2
-import numpy as np
+## 5) Parte C — Detecção de bordas e o Canny
 
-class ObjectCounter:
-    def __init__(self):
-        self.detection_history = []
-    
-    def count_objects(self, image, detection_method='contours', **kwargs):
-        """Conta objetos na imagem usando diferentes métodos"""
-        if detection_method == 'contours':
-            # Converter para escala de cinza
-            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
-            
-            # Aplicar threshold
-            threshold_value = kwargs.get('threshold_value', 127)
-            _, binary = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
-            
-            # Encontrar contornos
-            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            # Filtrar por área mínima
-            min_area = kwargs.get('min_area', 100)
-            filtered_contours = [c for c in contours if cv2.contourArea(c) >= min_area]
-            
-            return len(filtered_contours), filtered_contours
-        
-        elif detection_method == 'color':
-            from .color_detector import ColorDetector
-            detector = ColorDetector()
-            
-            color = kwargs.get('color', 'red')
-            min_area = kwargs.get('min_area', 100)
-            
-            contours, _ = detector.detect_by_color_range(image, color, min_area)
-            
-            return len(contours), contours
-        
-        else:
-            raise ValueError(f"Método de detecção '{detection_method}' não suportado")
-    
-    def count_and_save_results(self, image, output_path, detection_method='contours', **kwargs):
-        """Conta objetos e salva resultados"""
-        count, contours = self.count_objects(image, detection_method, **kwargs)
-        
-        # Desenhar resultados na imagem
-        result_image = image.copy()
-        cv2.drawContours(result_image, contours, -1, (0, 255, 0), 2)
-        
-        # Adicionar texto com contagem
-        cv2.putText(result_image, f'Contagem: {count}', (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        
-        # Salvar imagem
-        cv2.imwrite(output_path, cv2.cvtColor(result_image, cv2.COLOR_RGB2BGR))
-        
-        # Salvar informações
-        result_info = {
-            'count': count,
-            'timestamp': str(pd.Timestamp.now()) if 'pd' in globals() else 'timestamp_not_available',
-            'contour_areas': [cv2.contourArea(c) for c in contours],
-            'image_path': output_path
-        }
-        
-        self.detection_history.append(result_info)
-        
-        return result_info
-```
+### 5.1 Bordas por derivadas (Sobel/Laplaciano)
+- **Sobel**: aproxima derivadas em X e Y → destaca transições.
+- **Laplaciano**: segunda derivada → destaca regiões onde a intensidade muda rápido.
 
-### Exemplo de Uso Integrado
+!!! tip "Quase sempre: blur antes de borda"
+Uma suavização leve antes do detector tende a estabilizar bordas e reduzir falsos positivos por ruído.
 
-```python
-# src/examples/segmentation_example.py
-from features.thresholding import *
-from features.contours import *
-from features.bounding_boxes import *
-from features.color_detector import ColorDetector
-from features.object_counter import ObjectCounter
-from utils.io import load_image_rgb, show_image
-import matplotlib.pyplot as plt
+### 5.2 Canny (robusto e muito usado)
+O Canny é um pipeline:
+1) (normalmente) blur
+2) gradiente
+3) supressão de não-máximos
+4) histerese com **dois limiares** (`threshold1`, `threshold2`)
 
-def demonstrate_segmentation_techniques():
-    """Demonstra técnicas de segmentação e detecção"""
-    # Carregar imagem
-    image = load_image_rgb("data/raw/exemplo.jpg")  # Substitua pelo caminho real
-    
-    # 1. Demonstrar diferentes tipos de threshold
-    global_thresh = global_threshold(image, threshold_value=127)
-    adaptive_thresh = adaptive_threshold(image)
-    otsu_thresh, otsu_value = otsu_threshold(image)
-    
-    # 2. Encontrar contornos
-    contours, hierarchy = find_contours(otsu_thresh)
-    
-    # 3. Filtrar contornos por área
-    filtered_contours = filter_contours_by_area(contours, min_area=100)
-    
-    # 4. Desenhar bounding boxes
-    bbox_image = draw_bounding_boxes(image, filtered_contours)
-    
-    # 5. Detector de cores
-    color_detector = ColorDetector()
-    color_results = color_detector.detect_multiple_colors(
-        image, ['red', 'blue', 'green'], min_area=50
-    )
-    color_detected_image = color_detector.draw_color_detections(image, color_results)
-    
-    # 6. Contador de objetos
-    counter = ObjectCounter()
-    object_count, detected_contours = counter.count_objects(
-        image, detection_method='contours', min_area=100
-    )
-    
-    # Visualizar resultados
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    
-    axes[0,0].imshow(image)
-    axes[0,0].set_title('Imagem Original')
-    axes[0,0].axis('off')
-    
-    axes[0,1].imshow(global_thresh, cmap='gray')
-    axes[0,1].set_title('Threshold Global')
-    axes[0,1].axis('off')
-    
-    axes[0,2].imshow(adaptive_thresh, cmap='gray')
-    axes[0,2].set_title('Threshold Adaptativo')
-    axes[0,2].axis('off')
-    
-    axes[1,0].imshow(otsu_thresh, cmap='gray')
-    axes[1,0].set_title(f'Threshold Otsu (v={otsu_value:.2f})')
-    axes[1,0].axis('off')
-    
-    axes[1,1].imshow(bbox_image)
-    axes[1,1].set_title(f'Bounding Boxes (Contornos: {len(filtered_contours)})')
-    axes[1,1].axis('off')
-    
-    axes[1,2].imshow(color_detected_image)
-    axes[1,2].set_title(f'Detecção por Cor (Objetos: {sum(r["count"] for r in color_results.values())})')
-    axes[1,2].axis('off')
-    
-    plt.tight_layout()
-    plt.show()
-    
-    print(f"Contagem de objetos: {object_count}")
-    print(f"Contornos detectados: {len(detected_contours)}")
-    
-    # Mostrar propriedades de alguns contornos
-    if detected_contours:
-        for i, contour in enumerate(detected_contours[:3]):  # Mostrar as primeiras 3
-            props = get_contour_properties(contour)
-            print(f"\nContorno {i+1}:")
-            print(f"  Área: {props['area']:.2f}")
-            print(f"  Circularidade: {props['circularity']:.3f}")
-            print(f"  Razão de aspecto: {props['extent']:.3f}")
-            print(f"  Centroide: {props['centroid']}")
+**Intuição dos limiares:**
+- `threshold2` (alto): bordas “fortes”
+- `threshold1` (baixo): bordas “fracas” que só entram se conectadas a uma forte
 
-if __name__ == "__main__":
-    demonstrate_segmentation_techniques()
-```
+#### Quiz (rápido)
+<quiz>
+<question>
+No Canny, o que tende a acontecer se você diminuir bastante os dois thresholds?
+</question>
+<answer type="A">Menos bordas</answer>
+<answer type="B" correct="true">Mais bordas e mais ruído/“sujeira”</answer>
+<answer type="C">A imagem fica colorida</answer>
+<answer type="D">O kernel muda automaticamente</answer>
+</quiz>
 
-## Resultado Esperado
+### 5.3 Exercícios do notebook
+#### Desafio 3 — Ajuste de thresholds no Canny
+- Teste diferentes imagens.
+- Ajuste `threshold1` e `threshold2`.
+- Procure um “equilíbrio” entre:
+  - detectar bordas reais
+  - evitar ruído e textura irrelevante
 
-Nesta aula, você:
+---
 
-1. Implementou diferentes técnicas de threshold (global, adaptativo, Otsu)
-2. Desenvolveu funções para detecção e filtragem de contornos
-3. Criou funcionalidades para desenhar bounding boxes e extrair propriedades
-4. Construiu um detector de objetos por cor
-5. Desenvolveu um sistema de contagem automática de objetos
-6. Integrar todas essas funcionalidades em um exemplo prático
+## 6) Parte D — FILTRO DE LIMIARIZAÇÃO (threshold)
 
-O sistema agora começa a ter características de um produto real, com módulos bem definidos e funcionalidades que podem ser combinadas para resolver problemas específicos de detecção e segmentação.
+Limiarização converte tons de cinza em uma imagem binária (ou quase binária), classificando pixels com base em um limiar.
+
+Principais modos do OpenCV (ideia geral):
+- `THRESH_BINARY`: acima do limiar → 255; abaixo → 0
+- `THRESH_BINARY_INV`: invertido do binary
+- `THRESH_TRUNC`: acima → vira o limiar; abaixo mantém
+- `THRESH_TOZERO`: abaixo → 0; acima mantém
+- `THRESH_TOZERO_INV`: acima → 0; abaixo mantém
+
+!!! tip "Quando usar limiarização?"
+- Objetos bem destacados do fundo (diferença de intensidade clara)
+- Pré-processamento para contornos, OCR simples, segmentação inicial
+
+#### Quiz (rápido)
+<quiz>
+<question>
+Qual modo é o mais “clássico” para transformar uma imagem em preto e branco puro (binária)?
+</question>
+<answer type="A" correct="true">THRESH_BINARY</answer>
+<answer type="B">THRESH_TRUNC</answer>
+<answer type="C">THRESH_TOZERO</answer>
+<answer type="D">THRESH_TOZERO_INV</answer>
+</quiz>
+
+---
+
+## 7) Parte E — Sobreposição de imagens (blending)
+
+O blending combina duas imagens como uma média ponderada:
+
+\[
+g(x) = (1-\alpha)\,f_0(x) + \alpha\,f_1(x)
+\]
+
+- `α` perto de 0 → aparece mais `f0`
+- `α` perto de 1 → aparece mais `f1`
+
+!!! warning "Pré-condição para blending"
+As duas imagens precisam ter **mesmo tamanho** (H×W) e o mesmo número de canais, ou você deve ajustar (resize/crop).
+
+### 7.1 Exercícios do notebook
+#### Desafio 4 — Blending + filtros
+- Faça blending.
+- Aplique **antes ou depois** um blur ou realce.
+- Compare: “blending → filtro” vs “filtro → blending”.
+
+---
+
+## 8) Desafio final — Vídeo em tempo real (portfólio)
+
+#### Desafio 5 — Script `.py` que processa vídeo (webcam ou `.mp4`)
+Você vai construir um script que:
+1) captura frames (`cv2.VideoCapture`)
+2) aplica um filtro por convolução em **cada frame**
+3) exibe o resultado em tempo real (`cv2.imshow`)
+
+**Requisitos mínimos**
+- Escolha e implemente pelo menos **uma máscara**:
+  - bordas (Sobel/Laplaciano)
+  - blur (média/gaussiano)
+- Explique no código (comentário curto) o efeito da máscara.
+- Organize o código em **funções** (responsabilidades claras).
+
+!!! tip "Checklist de qualidade"
+- `main()` claro
+- função `apply_filter(frame)` (ou similar)
+- tratamento de tecla para sair (`q`/`esc`)
+- se usar webcam: cheque se abriu corretamente
+
+---
+
+## 9) Fechamento e ponte para a próxima aula
+
+Hoje você trabalhou com filtros no domínio espacial (kernels). Na próxima etapa, faz sentido avançar para:
+- segmentações mais robustas (HSV e `inRange`)
+- morfologia (erosão/dilatação)
+- contornos e extração de forma
+- e, mais à frente, features e descritores
+
+A diferença entre “brincar com kernels” e “usar kernels profissionalmente” é: **saber por que você está filtrando** (ruído? borda? realce?) e **conseguir justificar os parâmetros** (kernel, sigma, thresholds).
+

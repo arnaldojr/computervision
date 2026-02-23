@@ -1,400 +1,219 @@
-# Aula 2 - Processamento de Imagem Aplicado
+# Aula 2 — Operações básicas: negativo, recorte (ROI) e segmentação simples
 
-## Objetivo da Aula
+Nesta aula você vai aplicar **operações fundamentais** de manipulação de imagem (pixel a pixel) que aparecem o tempo todo em Visão Computacional.
 
-Aplicar técnicas de processamento de imagem em um contexto prático, criando funções reutilizáveis e organização modular para o pipeline de visão computacional.
+[Lab02 — Manipulação básica (Notebook)](lab02/arquivolab2.zip){ .md-button .md-button-primary }
 
-## Conteúdo Teórico
+A ideia é entender **o que está acontecendo com os valores dos pixels** — sem “pular direto” para funções prontas.
 
-### Espaços de Cor
+---
 
-O espaço de cor define como as cores são representadas em uma imagem digital. Cada espaço tem suas vantagens para diferentes tipos de operações:
+## Objetivos de aprendizagem
 
-- **RGB (Red, Green, Blue)**: Modelo aditivo baseado na combinação de luz vermelha, verde e azul. Adequado para dispositivos de exibição.
-- **HSV (Hue, Saturation, Value)**: Separa cor, saturação e brilho. Ideal para operações baseadas em cor específica.
-- **LAB**: Separa luminância de cor, útil para correções de cor independentes da iluminação.
+Ao final desta aula, você deve ser capaz de:
 
-### Histogramas
+1. Implementar **negativo** (inversão de intensidade) em imagem **em tons de cinza** e em **RGB**.
+2. Aplicar **recorte (crop)** para extrair uma **ROI** usando slicing (`img[y1:y2, x1:x2]`).
+3. Realizar uma **segmentação simples** baseada em um **limiar** (threshold) em um canal (ex.: canal **G**).
+4. Explicar limitações de operações “na mão” e por que técnicas mais robustas aparecem na próxima aula.
 
-O histograma de uma imagem mostra a distribuição de intensidades de pixel. É útil para análise e correção de contraste, permitindo técnicas como equalização de histograma.
+---
 
-### Filtros e Convolução
+## 1) Pré-requisitos mínimos (para não errar “besteira”)
 
-A convolução é uma operação fundamental que aplica um kernel (filtro) sobre uma imagem. Tipos comuns:
+### 1.1 Ordem de indexação (y antes de x)
 
-- **Filtros Passa-Baixa**: Suavizam a imagem, reduzindo ruído (média, gaussiano, mediana)
-- **Filtros Passa-Alta**: Realçam bordas e detalhes (Sobel, Laplaciano, Canny)
+Em NumPy/OpenCV, o acesso é sempre:
 
-### Operações Morfológicas
+- `img[y, x]` em imagem 2D (tons de cinza)
+- `img[y, x, c]` em imagem 3D (colorida)
 
-Operações que manipulam a estrutura geométrica dos objetos em uma imagem binária:
+!!! warning "Erro clássico"
+    Trocar `(x, y)` por `(y, x)` **recorta a área errada** e pode parecer que “o código está bugado”.
 
-- **Erosão**: Reduz o tamanho dos objetos brancos
-- **Dilatação**: Aumenta o tamanho dos objetos brancos
-- **Abertura**: Erosão seguida de dilatação (remove ruído)
-- **Fechamento**: Dilatação seguida de erosão (fecha lacunas)
+<quiz>
+Em `img[y, x]`, qual índice representa a **linha** (altura)?
+- [x] `y`
+- [ ] `x`
+- [ ] depende do formato da imagem
 
-## Atividade Prática
+Trocar `(x, y)` por `(y, x)` **recorta a área errada** e pode parecer que “o código está bugado”.
+</quiz>
 
-### Implementar Pipeline de Pré-processamento
+### 1.2 `dtype` e range (por que 255 aparece sempre)
 
-Vamos expandir nosso projeto com módulos específicos para pré-processamento:
+A maioria dos exemplos do notebook usa imagens `uint8`:
 
-```python
-# src/preprocessing/color_spaces.py
-import cv2
-import numpy as np
+- valores inteiros no intervalo **0..255**
+- 0 = preto, 255 = branco (em tons de cinza)
 
-def rgb_to_hsv(image):
-    """Converte imagem de RGB para HSV"""
-    return cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+<quiz>
+Se a imagem é `uint8`, qual é o valor máximo que um pixel pode ter?
+- [x] 255
+- [ ] 1
+- [ ] 1024
+</quiz>
 
-def rgb_to_grayscale(image):
-    """Converte imagem de RGB para escala de cinza"""
-    return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+---
 
-def adjust_brightness_contrast(image, brightness=0, contrast=1):
-    """Ajusta brilho e contraste da imagem"""
-    # Primeiro ajustar contraste, depois brilho
-    adjusted = image * contrast + brightness
-    # Garantir que os valores estejam entre 0 e 255
-    adjusted = np.clip(adjusted, 0, 255)
-    return adjusted.astype(np.uint8)
+## 2) Parte A — Filtro negativo (inversão)
 
-def equalize_histogram(image):
-    """Equaliza histograma de imagem em escala de cinza"""
-    if len(image.shape) == 3:
-        # Se for imagem colorida, converter para escala de cinza
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        equalized = cv2.equalizeHist(gray)
-        return equalized
-    else:
-        return cv2.equalizeHist(image)
+### 2.1 Intuição
 
-def equalize_histogram_color(image):
-    """Equaliza histograma de imagem colorida (canal V do HSV)"""
-    # Converter para HSV
-    hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    
-    # Equalizar canal V (valor/brilho)
-    hsv[:,:,2] = cv2.equalizeHist(hsv[:,:,2])
-    
-    # Converter de volta para RGB
-    return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-```
+O **negativo** troca “claro ↔ escuro”.
 
-### Implementar Filtros e Convolução
+Em uma imagem `uint8`, a inversão explícita é:
 
-```python
-# src/preprocessing/filters.py
-import cv2
-import numpy as np
+- `novo = 255 - antigo`
 
-def apply_blur(image, kernel_size=(5, 5)):
-    """Aplica filtro de desfoque"""
-    return cv2.blur(image, kernel_size)
+Isso vale para:
+- **tons de cinza** (um valor por pixel)
+- **RGB** (três valores por pixel, um por canal)
 
-def apply_gaussian_blur(image, kernel_size=(5, 5), sigma_x=0):
-    """Aplica filtro de desfoque gaussiano"""
-    return cv2.GaussianBlur(image, kernel_size, sigma_x)
+!!! tip "Como conferir se está certo"
+    Pegue um pixel e faça na mão:
+    - se `antigo = 10`, então `novo = 245` (quase branco)
+    - se `antigo = 200`, então `novo = 55` (escurece)
 
-def apply_median_blur(image, kernel_size=5):
-    """Aplica filtro de mediana (bom para remover ruído sal e pimenta)"""
-    return cv2.medianBlur(image, kernel_size)
+<quiz>
+Se um pixel em tons de cinza vale 80, qual será o valor no negativo (`uint8`)?
+- [x] 175
+- [ ] 80
+- [ ] 255
+</quiz>
 
-def detect_edges_sobel(image):
-    """Detecta bordas usando o operador Sobel"""
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
-    
-    # Gradientes X e Y
-    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-    sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-    
-    # Magnitude do gradiente
-    sobel_combined = np.sqrt(sobel_x**2 + sobel_y**2)
-    
-    # Converter de volta para uint8
-    sobel_combined = np.uint8(255 * sobel_combined / np.max(sobel_combined))
-    
-    return sobel_combined
+### 2.2 Tons de cinza vs RGB
 
-def detect_edges_laplacian(image):
-    """Detecta bordas usando o operador Laplaciano"""
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
-    
-    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-    
-    # Converter de volta para uint8
-    laplacian = np.uint8(np.absolute(laplacian))
-    
-    return laplacian
+- Em **tons de cinza**, você inverte um único valor.
+- Em **RGB**, você inverte **cada canal**.
 
-def detect_edges_canny(image, low_threshold=50, high_threshold=150):
-    """Detecta bordas usando o detector de Canny"""
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if len(image.shape) == 3 else image
-    
-    return cv2.Canny(gray, low_threshold, high_threshold)
+Exemplo conceitual (um pixel):
+- antes: `(R,G,B) = (20, 120, 200)`
+- depois: `(235, 135, 55)`
 
-def apply_custom_filter(image, kernel):
-    """Aplica filtro personalizado usando convolução"""
-    if len(image.shape) == 3:
-        # Aplicar filtro a cada canal
-        filtered = np.zeros_like(image)
-        for i in range(image.shape[2]):
-            filtered[:,:,i] = cv2.filter2D(image[:,:,i], -1, kernel)
-        return filtered
-    else:
-        return cv2.filter2D(image, -1, kernel)
-```
+<quiz>
+Em uma imagem RGB, o negativo é aplicado:
+- [x] em cada canal (R, G e B)
+- [ ] apenas no canal R
+- [ ] apenas no canal com maior intensidade
+</quiz>
 
-### Implementar Operações Morfológicas
+### 2.3 Exercícios do notebook
 
-```python
-# src/preprocessing/morphology.py
-import cv2
-import numpy as np
+#### Desafio 1 — Negativo em escala de cinza (0..255)
 
-def create_structuring_element(shape='rect', size=5):
-    """Cria elemento estruturante para operações morfológicas"""
-    if shape == 'rect':
-        return cv2.getStructuringElement(cv2.MORPH_RECT, (size, size))
-    elif shape == 'ellipse':
-        return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
-    elif shape == 'cross':
-        return cv2.getStructuringElement(cv2.MORPH_CROSS, (size, size))
-    else:
-        raise ValueError("Forma não suportada. Use 'rect', 'ellipse' ou 'cross'")
+Implemente uma função/trecho que inverte uma imagem em tons de cinza **pixel a pixel**.
 
-def morphological_erosion(image, kernel_size=5, iterations=1):
-    """Aplica erosão morfológica"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.erode(image, kernel, iterations=iterations)
+!!! note "Dica do próprio notebook"
+    A inversão explícita é: `a = 255 - a`
 
-def morphological_dilation(image, kernel_size=5, iterations=1):
-    """Aplica dilatação morfológica"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.dilate(image, kernel, iterations=iterations)
+#### Desafio 2 — Negativo em imagem colorida (RGB)
 
-def morphological_opening(image, kernel_size=5, iterations=1):
-    """Aplica abertura morfológica (erosão seguida de dilatação)"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel, iterations=iterations)
+Faça o mesmo para uma imagem colorida, invertendo **R, G e B**.
 
-def morphological_closing(image, kernel_size=5, iterations=1):
-    """Aplica fechamento morfológico (dilatação seguida de erosão)"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel, iterations=iterations)
+!!! tip "Validação rápida"
+    Se a imagem original tem muito céu azul, o negativo tende a puxar para tons “amarelados/avermelhados”.
 
-def morphological_gradient(image, kernel_size=5):
-    """Aplica gradiente morfológico"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.morphologyEx(image, cv2.MORPH_GRADIENT, kernel)
+---
 
-def top_hat(image, kernel_size=5):
-    """Aplica transformada Top Hat"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.morphologyEx(image, cv2.MORPH_TOPHAT, kernel)
+## 3) Parte B — Recorte de imagem (Crop / ROI)
 
-def black_hat(image, kernel_size=5):
-    """Aplica transformada Black Hat"""
-    kernel = create_structuring_element(size=kernel_size)
-    return cv2.morphologyEx(image, cv2.MORPH_BLACKHAT, kernel)
-```
+### 3.1 O que é ROI?
 
-### Pipeline de Pré-processamento Integrado
+ROI (*Region of Interest*) é uma sub-região da imagem que você quer analisar.
 
-```python
-# src/preprocessing/pipeline.py
-from .color_spaces import *
-from .filters import *
-from .morphology import *
-import numpy as np
+Recorte por slicing:
 
-class ImagePreprocessingPipeline:
-    def __init__(self):
-        self.steps = []
-    
-    def add_resize(self, width, height):
-        """Adiciona passo de redimensionamento"""
-        def resize_step(image):
-            return cv2.resize(image, (width, height))
-        self.steps.append(('resize', resize_step))
-        return self
-    
-    def add_grayscale(self):
-        """Adiciona passo de conversão para escala de cinza"""
-        self.steps.append(('grayscale', rgb_to_grayscale))
-        return self
-    
-    def add_color_conversion(self, conversion_func):
-        """Adiciona passo de conversão de espaço de cor"""
-        self.steps.append(('color_conversion', conversion_func))
-        return self
-    
-    def add_brightness_contrast(self, brightness=0, contrast=1):
-        """Adiciona passo de ajuste de brilho e contraste"""
-        def bc_step(image):
-            return adjust_brightness_contrast(image, brightness, contrast)
-        self.steps.append(('brightness_contrast', bc_step))
-        return self
-    
-    def add_blur(self, blur_type='gaussian', kernel_size=(5, 5)):
-        """Adiciona passo de desfoque"""
-        if blur_type == 'gaussian':
-            blur_func = lambda img: apply_gaussian_blur(img, kernel_size)
-        elif blur_type == 'average':
-            blur_func = lambda img: apply_blur(img, kernel_size)
-        elif blur_type == 'median':
-            blur_func = lambda img: apply_median_blur(img, kernel_size[0])
-        else:
-            raise ValueError("Tipo de desfoque não suportado")
-        
-        self.steps.append(('blur', blur_func))
-        return self
-    
-    def add_edge_detection(self, edge_type='canny', **kwargs):
-        """Adiciona passo de detecção de bordas"""
-        if edge_type == 'sobel':
-            edge_func = detect_edges_sobel
-        elif edge_type == 'laplacian':
-            edge_func = detect_edges_laplacian
-        elif edge_type == 'canny':
-            def canny_wrapper(image):
-                low = kwargs.get('low_threshold', 50)
-                high = kwargs.get('high_threshold', 150)
-                return detect_edges_canny(image, low, high)
-            edge_func = canny_wrapper
-        else:
-            raise ValueError("Tipo de detecção de bordas não suportado")
-        
-        self.steps.append(('edge_detection', edge_func))
-        return self
-    
-    def add_morphological_operation(self, operation, kernel_size=5, **kwargs):
-        """Adiciona operação morfológica"""
-        if operation == 'erosion':
-            morph_func = lambda img: morphological_erosion(img, kernel_size, kwargs.get('iterations', 1))
-        elif operation == 'dilation':
-            morph_func = lambda img: morphological_dilation(img, kernel_size, kwargs.get('iterations', 1))
-        elif operation == 'opening':
-            morph_func = lambda img: morphological_opening(img, kernel_size, kwargs.get('iterations', 1))
-        elif operation == 'closing':
-            morph_func = lambda img: morphological_closing(img, kernel_size, kwargs.get('iterations', 1))
-        elif operation == 'gradient':
-            morph_func = lambda img: morphological_gradient(img, kernel_size)
-        else:
-            raise ValueError("Operação morfológica não suportada")
-        
-        self.steps.append(('morphological', morph_func))
-        return self
-    
-    def add_histogram_equalization(self, color_space='grayscale'):
-        """Adiciona equalização de histograma"""
-        if color_space == 'grayscale':
-            eq_func = equalize_histogram
-        elif color_space == 'color':
-            eq_func = equalize_histogram_color
-        else:
-            raise ValueError("Espaço de cor para equalização não suportado")
-        
-        self.steps.append(('histogram_equalization', eq_func))
-        return self
-    
-    def process(self, image):
-        """Processa imagem aplicando todos os passos do pipeline"""
-        result = image.copy()
-        
-        for step_name, step_func in self.steps:
-            try:
-                result = step_func(result)
-            except Exception as e:
-                print(f"Erro no passo '{step_name}': {str(e)}")
-                # Continuar com a próxima etapa ou retornar imagem anterior
-                continue
-        
-        return result
-    
-    def reset(self):
-        """Reseta o pipeline removendo todos os passos"""
-        self.steps = []
-        return self
-```
+- `roi = img[y1:y2, x1:x2]`
 
-### Exemplo de Uso do Pipeline
+!!! warning "Ordem importa"
+    `img[y1:y2, x1:x2]` (linhas primeiro).  
+    Se você inverter, você recorta outra região.
 
-```python
-# src/examples/preprocessing_example.py
-from preprocessing.pipeline import ImagePreprocessingPipeline
-from utils.io import load_image_rgb, show_image
-import matplotlib.pyplot as plt
+<quiz>
+Qual recorte extrai uma ROI do canto superior esquerdo de tamanho 100×200 (H×W)?
+- [x] `img[0:100, 0:200]`
+- [ ] `img[0:200, 0:100]`
+- [ ] `img[0:100, 0:200, 0]`
+</quiz>
 
-def demonstrate_preprocessing_pipeline():
-    """Demonstra o uso do pipeline de pré-processamento"""
-    # Carregar imagem
-    image = load_image_rgb("data/raw/exemplo.jpg")  # Substitua pelo caminho real
-    
-    # Criar diferentes pipelines
-    # Pipeline 1: Ajuste de brilho e contraste + desfoque gaussiano
-    pipeline1 = ImagePreprocessingPipeline()
-    pipeline1.add_brightness_contrast(brightness=20, contrast=1.2) \
-             .add_blur(blur_type='gaussian', kernel_size=(5, 5))
-    
-    # Pipeline 2: Detecção de bordas Canny
-    pipeline2 = ImagePreprocessingPipeline()
-    pipeline2.add_grayscale() \
-             .add_edge_detection(edge_type='canny', low_threshold=50, high_threshold=150)
-    
-    # Pipeline 3: Equalização de histograma + operações morfológicas
-    pipeline3 = ImagePreprocessingPipeline()
-    pipeline3.add_histogram_equalization(color_space='color') \
-             .add_morphological_operation('opening', kernel_size=3, iterations=1) \
-             .add_morphological_operation('closing', kernel_size=3, iterations=1)
-    
-    # Processar imagens
-    processed1 = pipeline1.process(image)
-    processed2 = pipeline2.process(image)
-    processed3 = pipeline3.process(image)
-    
-    # Visualizar resultados
-    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-    
-    axes[0,0].imshow(image)
-    axes[0,0].set_title('Imagem Original')
-    axes[0,0].axis('off')
-    
-    axes[0,1].imshow(processed1)
-    axes[0,1].set_title('Brilho/Contraste + Blur')
-    axes[0,1].axis('off')
-    
-    axes[1,0].imshow(processed2, cmap='gray')
-    axes[1,0].set_title('Detecção de Bordas (Canny)')
-    axes[1,0].axis('off')
-    
-    axes[1,1].imshow(processed3)
-    axes[1,1].set_title('Equalização + Morfológico')
-    axes[1,1].axis('off')
-    
-    plt.tight_layout()
-    plt.show()
-    
-    # Limpar pipelines
-    pipeline1.reset()
-    pipeline2.reset()
-    pipeline3.reset()
+### 3.2 Dica prática: sempre cheque o `shape`
 
-if __name__ == "__main__":
-    demonstrate_preprocessing_pipeline()
-```
+Depois do recorte, confira:
 
-## Resultado Esperado
+- `roi.shape == (y2 - y1, x2 - x1)` (em tons de cinza)
+- `roi.shape == (y2 - y1, x2 - x1, 3)` (em RGB)
 
-Nesta aula, você:
+<quiz>
+Se `roi = img[50:250, 580:950]` (imagem RGB), qual é a altura da ROI?
+- [x] 200
+- [ ] 370
+- [ ] 950
+</quiz>
 
-1. Aprendeu sobre diferentes espaços de cor e suas aplicações
-2. Implementou funções para manipulação de histogramas
-3. Criou filtros e operadores de detecção de bordas
-4. Desenvolveu operações morfológicas
-5. Construiu um pipeline de pré-processamento modular e reutilizável
-6. Testou diferentes combinações de operações para ver seus efeitos
+### 3.3 Exercício do notebook
 
-O pipeline modular permite fácil experimentação e combinação de diferentes técnicas de pré-processamento, facilitando a criação de soluções específicas para diferentes problemas de visão computacional.
+#### Desafio 3 — “Ajude o sayajin!!”
+
+Você deve recortar a região correta da imagem, criando uma ROI que resolve o problema proposto no notebook.
+
+!!! tip "Como não se perder"
+    1. Comece com um recorte grande (garanta que pega a área).
+    2. Vá ajustando `x1, x2, y1, y2` até “encaixar”.
+    3. Se ficar estranho, você provavelmente trocou x e y.
+
+---
+
+## 4) Parte C — Segmentação simples por limiar (threshold “na mão”)
+
+### 4.1 Ideia: separar “algo” do fundo
+
+Segmentar é criar uma regra do tipo:
+
+- **se** o pixel satisfaz uma condição → pinta de uma cor (ex.: branco)
+- **senão** → pinta de outra (ex.: preto)
+
+No notebook, aparece uma ideia simples (didática):
+
+- olhar o **canal G** (`img[y, x, 1]`)  
+- usar um limiar (ex.: `> 170`)
+
+!!! note "Por que canal G?"
+    Não é “a melhor” forma — é só um jeito **simples** de começar a enxergar como condições em pixels viram uma segmentação.
+
+<quiz>
+Se você aumentar o limiar de 170 para 220, a segmentação tende a:
+- [x] selecionar menos pixels (fica mais restrita)
+- [ ] selecionar mais pixels (fica mais ampla)
+- [ ] não mudar nada
+</quiz>
+
+### 4.2 Limitações (importante!)
+
+Esse tipo de regra:
+- depende muito da iluminação
+- falha com sombras/reflexos
+- não generaliza bem para outras cenas
+
+Isso é **intencional**: serve para você entender o mecanismo básico.  
+Na próxima aula, a segmentação vai ficar mais robusta.
+
+### 4.3 Exercícios do notebook
+
+#### Desafio 4 — Experimente (aperitivo)
+
+Modifique parâmetros e lógica do código para observar:
+- como o limiar altera o resultado
+- como escolher canal (R/G/B) muda tudo
+- como pequenos ajustes “quebram” ou “melhoram” a segmentação
+
+!!! tip "Sugestões de variação"
+    - troque `> 170` por `> 150` e `> 200`
+    - tente o canal `0` (R) e o canal `2` (B)
+    - em vez de pintar branco, pinte de vermelho `(255,0,0)` para visualizar melhor
+
+#### Desafio 5 — Faça o contrário: “fundo sem o drone”
+
+A ideia é inverter a regra:
+- em vez de destacar o “fundo”, tente remover o objeto (ou vice-versa)
+
