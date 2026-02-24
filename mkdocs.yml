@@ -87,8 +87,7 @@ nav:
     - Metodologia: sobre/metodologia.md
     - Avaliação: sobre/avaliacao.md
   - Aulas Práticas:
-    - Introdução: aulas/intro/index.md
-    # - Lab05 - Espaço de cor e contorno: aulas/lab05/Espaço-cor-contorno.ipynb   
+    - Introdução: aulas/intro/index.md 
     - Aula 1 - Fundamentos de PDI: aulas/aula1.md
     - Aula 2 - Operações básicas: aulas/aula2.md
     - Aula 3 - Convolução e limiarização: aulas/aula3.md
