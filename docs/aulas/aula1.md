@@ -38,6 +38,7 @@ Uma imagem digital pode ser vista como um sinal contínuo (mundo real) convertid
 - **Quantização (quantization):** define **quantos valores possíveis** cada pixel pode assumir.
 
 Em termos práticos:
+
 - Mais resolução ⇒ mais detalhes espaciais, mas maior custo de processamento.
 - Mais bits por pixel ⇒ mais níveis de intensidade (ex.: 8 bits ⇒ 256 níveis).
 
@@ -71,6 +72,7 @@ No notebook, após carregar uma imagem, você verá algo como:
   `shape = (H, W, C)` com `C = 3` (canais)
 
 **Interpretação:**
+
 - `H` = número de **linhas** (altura)
 - `W` = número de **colunas** (largura)
 - `C` = **canais de cor**
@@ -105,6 +107,7 @@ A indexação é `img[y, x]` (linha, coluna).
 - **Matplotlib (`plt.imshow`)** espera **RGB**.
 
 Se você fizer:
+
 ```python
 img = cv2.imread("NATUREZA_1.jpg")
 plt.imshow(img)
@@ -112,6 +115,7 @@ plt.imshow(img)
 as cores provavelmente ficarão trocadas.
 
 A correção é converter:
+
 ```python
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 plt.imshow(img_rgb)
@@ -146,10 +150,12 @@ Matplotlib espera RGB.
 Uma imagem em tons de cinza pode ser vista como **uma única banda** de intensidade.
 
 No OpenCV:
+
 - `cv2.imread(path, cv2.IMREAD_GRAYSCALE)`  
 - ou `cv2.imread(path, 0)`
 
 Na visualização com Matplotlib, use:
+
 ```python
 plt.imshow(img_gray, cmap="gray")
 ```
@@ -186,11 +192,13 @@ A maioria das imagens lidas com OpenCV vem como:
 - valores no range **[0, 255]**
 
 Isso tem consequências:
+
 - Ao fazer contas, você pode ter **overflow** ou **clipping** se não controlar o tipo.
 - Para operações matemáticas (ex.: normalização, filtros, gamma), é comum converter para `float32`,
   calcular e depois voltar para `uint8` com recorte.
 
 Exemplo de boa prática (ideia geral):
+
 ```python
 img_f = img.astype("float32") / 255.0
 # ... processa ...
@@ -224,8 +232,10 @@ img2 = cv2.resize(img_rgb, (600, 400), cv2.INTER_LINEAR)
 ```
 
 Dois pontos importantes:
+
 1. O tamanho é informado como **(largura, altura)** — atenção: é o inverso do `shape`.
 2. A interpolação define como os novos pixels são estimados:
+
    - `INTER_NEAREST`: rápido, pode “pixelar”
    - `INTER_LINEAR`: padrão, bom para muitos casos
    - `INTER_AREA`: geralmente bom para reduzir (downsample)

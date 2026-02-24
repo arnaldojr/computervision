@@ -26,6 +26,7 @@ Ao final da aula, você deve ser capaz de:
 ## 1) Pré-requisitos mínimos (para não errar “besteira”)
 
 ### 1.1 Imagem como matriz (revisão rápida)
+
 - Imagem em tons de cinza: `img.shape == (H, W)`
 - Imagem colorida (OpenCV): `img.shape == (H, W, 3)` e **ordem BGR** (não RGB)
 
@@ -33,6 +34,7 @@ Ao final da aula, você deve ser capaz de:
     Se você pegar um kernel “por canal” ou fizer blending de imagens coloridas, lembre que o OpenCV lê como **BGR** por padrão.
 
 ### 1.2 `dtype` e saturação (uint8)
+
 Filtros podem gerar valores **negativos** ou **maiores que 255**. Em `uint8`, isso pode “estourar” e causar resultado estranho.
 
 !!! tip "Regra de ouro para depurar"
@@ -45,6 +47,7 @@ Filtros podem gerar valores **negativos** ou **maiores que 255**. Em `uint8`, is
 Um **kernel** (ou máscara) é uma pequena matriz (3×3, 5×5, 7×7…) que define como cada pixel será recalculado com base na sua **vizinhança**.
 
 Intuição:
+
 - O kernel “passa por baixo” da imagem.
 - Em cada posição, você faz uma **soma ponderada** (produto elemento a elemento + soma).
 - O resultado vira o novo valor do pixel central.
@@ -62,7 +65,9 @@ Intuição:
 **O que faz:** reduz ruído, “alisa” a imagem, diminui detalhes finos.
 
 ### 3.1 Média (box filter)
+
 Kernel típico 3×3:
+
 \[
 \frac{1}{9}
 \begin{bmatrix}
@@ -75,15 +80,15 @@ Kernel típico 3×3:
 **Intuição:** todo mundo pesa igual.
 
 ### 3.2 Gaussiano
+
 Parecido com média, mas o centro pesa mais.
 
 **Intuição:** suaviza sem “destruir” tanto as bordas quanto o box filter.
 
 !!! tip "Tamanho do kernel importa"
-- Kernel maior → blur mais forte (mais perda de detalhe)
-- Kernel menor → blur mais leve
+    - Kernel maior → blur mais forte (mais perda de detalhe)
+    - Kernel menor → blur mais leve
 
-#### Quiz (rápido)
 <quiz>
 Em um kernel de suavização “bem comportado”, a soma dos coeficientes deve ser:
 - [ ] 0
@@ -94,7 +99,9 @@ Em um kernel de suavização “bem comportado”, a soma dos coeficientes deve 
 </quiz>
 
 ### 3.3 Exercícios do notebook
+
 #### Desafio 1 — Estudo de blurring
+
 - Escolha uma imagem.
 - Compare filtros de borramento e **varie o tamanho do kernel**.
 - Escreva 2–3 linhas do que você observou (detalhe, ruído, bordas).
@@ -106,6 +113,7 @@ Em um kernel de suavização “bem comportado”, a soma dos coeficientes deve 
 **O que faz:** enfatiza detalhes e bordas (aumenta contraste local).
 
 Um kernel clássico 3×3 (exemplo):
+
 \[
 \begin{bmatrix}
 0 & -1 & 0\\
@@ -117,10 +125,10 @@ Um kernel clássico 3×3 (exemplo):
 **Intuição:** você “pune” vizinhos e “recompensa” o centro.
 
 !!! warning "Sharpening amplifica ruído"
-Se a imagem já tiver ruído, sharpening pode piorar. Muitas pipelines fazem:
-1) blur leve → 2) sharpening → 3) pós-processamento
+    Se a imagem já tiver ruído, sharpening pode piorar. Muitas pipelines fazem:
+    1) blur leve → 2) sharpening → 3) pós-processamento
 
-#### Quiz (rápido)
+
 <quiz>
 Por que kernels de realce costumam ter valores negativos?
 - [ ] Para reduzir o tamanho da imagem
@@ -131,7 +139,9 @@ Por que kernels de realce costumam ter valores negativos?
 </quiz>
 
 ### 4.1 Exercícios do notebook
+
 #### Desafio 2 — Estudo de contraste/realce
+
 - Escolha uma imagem.
 - Teste kernels de realce (sharpen) e **varie o tamanho do kernel** quando aplicável.
 - Compare: “ficou mais nítido” vs “ficou mais ruidoso”.
@@ -141,24 +151,27 @@ Por que kernels de realce costumam ter valores negativos?
 ## 5) Parte C — Detecção de bordas e o Canny
 
 ### 5.1 Bordas por derivadas (Sobel/Laplaciano)
+
 - **Sobel**: aproxima derivadas em X e Y → destaca transições.
 - **Laplaciano**: segunda derivada → destaca regiões onde a intensidade muda rápido.
 
 !!! tip "Quase sempre: blur antes de borda"
-Uma suavização leve antes do detector tende a estabilizar bordas e reduzir falsos positivos por ruído.
+    Uma suavização leve antes do detector tende a estabilizar bordas e reduzir falsos positivos por ruído.
 
 ### 5.2 Canny (robusto e muito usado)
+
 O Canny é um pipeline:
+
 1) (normalmente) blur
 2) gradiente
 3) supressão de não-máximos
 4) histerese com **dois limiares** (`threshold1`, `threshold2`)
 
 **Intuição dos limiares:**
+
 - `threshold2` (alto): bordas “fortes”
 - `threshold1` (baixo): bordas “fracas” que só entram se conectadas a uma forte
 
-#### Quiz (rápido)
 <quiz>
 No Canny, o que tende a acontecer se você diminuir bastante os dois thresholds?
 - [ ] Menos bordas
@@ -169,10 +182,13 @@ No Canny, o que tende a acontecer se você diminuir bastante os dois thresholds?
 </quiz>
 
 ### 5.3 Exercícios do notebook
+
 #### Desafio 3 — Ajuste de thresholds no Canny
+
 - Teste diferentes imagens.
 - Ajuste `threshold1` e `threshold2`.
 - Procure um “equilíbrio” entre:
+
   - detectar bordas reais
   - evitar ruído e textura irrelevante
 
@@ -183,6 +199,7 @@ No Canny, o que tende a acontecer se você diminuir bastante os dois thresholds?
 Limiarização converte tons de cinza em uma imagem binária (ou quase binária), classificando pixels com base em um limiar.
 
 Principais modos do OpenCV (ideia geral):
+
 - `THRESH_BINARY`: acima do limiar → 255; abaixo → 0
 - `THRESH_BINARY_INV`: invertido do binary
 - `THRESH_TRUNC`: acima → vira o limiar; abaixo mantém
@@ -190,10 +207,9 @@ Principais modos do OpenCV (ideia geral):
 - `THRESH_TOZERO_INV`: acima → 0; abaixo mantém
 
 !!! tip "Quando usar limiarização?"
-- Objetos bem destacados do fundo (diferença de intensidade clara)
-- Pré-processamento para contornos, OCR simples, segmentação inicial
+    - Objetos bem destacados do fundo (diferença de intensidade clara)
+    - Pré-processamento para contornos, OCR simples, segmentação inicial
 
-#### Quiz (rápido)
 <quiz>
 Qual modo é o mais “clássico” para transformar uma imagem em preto e branco puro (binária)?
 - [x] THRESH_BINARY
@@ -220,7 +236,9 @@ g(x) = (1-\alpha)\,f_0(x) + \alpha\,f_1(x)
     As duas imagens precisam ter **mesmo tamanho** (H×W) e o mesmo número de canais, ou você deve ajustar (resize/crop).
 
 ### 7.1 Exercícios do notebook
+
 #### Desafio 4 — Blending + filtros
+
 - Faça blending.
 - Aplique **antes ou depois** um blur ou realce.
 - Compare: “blending → filtro” vs “filtro → blending”.
@@ -230,33 +248,25 @@ g(x) = (1-\alpha)\,f_0(x) + \alpha\,f_1(x)
 ## 8) Desafio final — Vídeo em tempo real (portfólio)
 
 #### Desafio 5 — Script `.py` que processa vídeo (webcam ou `.mp4`)
+
 Você vai construir um script que:
+
 1) captura frames (`cv2.VideoCapture`)
 2) aplica um filtro por convolução em **cada frame**
 3) exibe o resultado em tempo real (`cv2.imshow`)
 
 **Requisitos mínimos**
+
 - Escolha e implemente pelo menos **uma máscara**:
+
   - bordas (Sobel/Laplaciano)
   - blur (média/gaussiano)
+
 - Explique no código (comentário curto) o efeito da máscara.
 - Organize o código em **funções** (responsabilidades claras).
 
 !!! tip "Checklist de qualidade"
-- `main()` claro
-- função `apply_filter(frame)` (ou similar)
-- tratamento de tecla para sair (`q`/`esc`)
-- se usar webcam: cheque se abriu corretamente
-
----
-
-## 9) Fechamento e ponte para a próxima aula
-
-Hoje você trabalhou com filtros no domínio espacial (kernels). Na próxima etapa, faz sentido avançar para:
-- segmentações mais robustas (HSV e `inRange`)
-- morfologia (erosão/dilatação)
-- contornos e extração de forma
-- e, mais à frente, features e descritores
-
-A diferença entre “brincar com kernels” e “usar kernels profissionalmente” é: **saber por que você está filtrando** (ruído? borda? realce?) e **conseguir justificar os parâmetros** (kernel, sigma, thresholds).
-
+    - `main()` claro
+    - função `apply_filter(frame)` (ou similar)
+    - tratamento de tecla para sair (`q`/`esc`)
+    - se usar webcam: cheque se abriu corretamente

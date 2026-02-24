@@ -67,6 +67,7 @@ Em uma imagem `uint8`, a inversão explícita é:
 - `novo = 255 - antigo`
 
 Isso vale para:
+
 - **tons de cinza** (um valor por pixel)
 - **RGB** (três valores por pixel, um por canal)
 
@@ -88,6 +89,7 @@ Se um pixel em tons de cinza vale 80, qual será o valor no negativo (`uint8`)?
 - Em **RGB**, você inverte **cada canal**.
 
 Exemplo conceitual (um pixel):
+
 - antes: `(R,G,B) = (20, 120, 200)`
 - depois: `(235, 135, 55)`
 
@@ -191,6 +193,7 @@ Se você aumentar o limiar de 170 para 220, a segmentação tende a:
 ### 4.2 Limitações (importante!)
 
 Esse tipo de regra:
+
 - depende muito da iluminação
 - falha com sombras/reflexos
 - não generaliza bem para outras cenas
@@ -203,6 +206,7 @@ Na próxima aula, a segmentação vai ficar mais robusta.
 #### Desafio 4 — Experimente (aperitivo)
 
 Modifique parâmetros e lógica do código para observar:
+
 - como o limiar altera o resultado
 - como escolher canal (R/G/B) muda tudo
 - como pequenos ajustes “quebram” ou “melhoram” a segmentação
