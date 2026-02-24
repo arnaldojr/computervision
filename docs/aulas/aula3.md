@@ -85,13 +85,12 @@ Parecido com média, mas o centro pesa mais.
 
 #### Quiz (rápido)
 <quiz>
-<question>
 Em um kernel de suavização “bem comportado”, a soma dos coeficientes deve ser:
-</question>
-<answer type="A">0</answer>
-<answer type="B" correct="true">1 (ou normalizada para 1)</answer>
-<answer type="C">255</answer>
-<answer type="D">Depende do formato da imagem</answer>
+- [ ] 0
+- [x] 1 (ou normalizada para 1)
+- [ ] 255
+- [ ] Depende do formato da imagem
+
 </quiz>
 
 ### 3.3 Exercícios do notebook
@@ -123,13 +122,12 @@ Se a imagem já tiver ruído, sharpening pode piorar. Muitas pipelines fazem:
 
 #### Quiz (rápido)
 <quiz>
-<question>
 Por que kernels de realce costumam ter valores negativos?
-</question>
-<answer type="A">Para reduzir o tamanho da imagem</answer>
-<answer type="B">Porque OpenCV exige valores negativos</answer>
-<answer type="C" correct="true">Para subtrair contribuição de vizinhos e aumentar contraste local</answer>
-<answer type="D">Para converter BGR em RGB</answer>
+- [ ] Para reduzir o tamanho da imagem
+- [ ] Porque OpenCV exige valores negativos
+- [x] Para subtrair contribuição de vizinhos e aumentar contraste local
+- [ ] Para converter BGR em RGB
+
 </quiz>
 
 ### 4.1 Exercícios do notebook
@@ -162,13 +160,12 @@ O Canny é um pipeline:
 
 #### Quiz (rápido)
 <quiz>
-<question>
 No Canny, o que tende a acontecer se você diminuir bastante os dois thresholds?
-</question>
-<answer type="A">Menos bordas</answer>
-<answer type="B" correct="true">Mais bordas e mais ruído/“sujeira”</answer>
-<answer type="C">A imagem fica colorida</answer>
-<answer type="D">O kernel muda automaticamente</answer>
+- [ ] Menos bordas
+- [x] Mais bordas e mais ruído/“sujeira”
+- [ ] A imagem fica colorida
+- [ ] O kernel muda automaticamente
+
 </quiz>
 
 ### 5.3 Exercícios do notebook
@@ -198,13 +195,12 @@ Principais modos do OpenCV (ideia geral):
 
 #### Quiz (rápido)
 <quiz>
-<question>
 Qual modo é o mais “clássico” para transformar uma imagem em preto e branco puro (binária)?
-</question>
-<answer type="A" correct="true">THRESH_BINARY</answer>
-<answer type="B">THRESH_TRUNC</answer>
-<answer type="C">THRESH_TOZERO</answer>
-<answer type="D">THRESH_TOZERO_INV</answer>
+- [x] THRESH_BINARY
+- [ ] THRESH_TRUNC
+- [ ] THRESH_TOZERO
+- [ ] THRESH_TOZERO_INV
+
 </quiz>
 
 ---
@@ -221,7 +217,7 @@ g(x) = (1-\alpha)\,f_0(x) + \alpha\,f_1(x)
 - `α` perto de 1 → aparece mais `f1`
 
 !!! warning "Pré-condição para blending"
-As duas imagens precisam ter **mesmo tamanho** (H×W) e o mesmo número de canais, ou você deve ajustar (resize/crop).
+    As duas imagens precisam ter **mesmo tamanho** (H×W) e o mesmo número de canais, ou você deve ajustar (resize/crop).
 
 ### 7.1 Exercícios do notebook
 #### Desafio 4 — Blending + filtros

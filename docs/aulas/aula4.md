@@ -64,13 +64,12 @@ mas seu canal V muda — por isso HSV tende a ser mais estável para segmentar.
 
 #### Quiz (rápido)
 <quiz>
-<question>
 Qual componente do HSV está mais relacionado à variação de iluminação/brilho?
-</question>
-<answer type="A">H</answer>
-<answer type="B">S</answer>
-<answer type="C" correct="true">V</answer>
-<answer type="D">Nenhum</answer>
+- [ ] H
+- [ ] S
+- [x] V
+- [ ] Nenhum
+
 </quiz>
 
 ---
@@ -104,13 +103,12 @@ Se você segmentar vermelho e a máscara falhar, suspeite do “wrap-around” d
 
 #### Quiz (rápido)
 <quiz>
-<question>
 Se você aumentar muito o limiar mínimo de Saturação (S) na faixa HSV, o que tende a acontecer?
-</question>
-<answer type="A">Mais pixels entram na máscara</answer>
-<answer type="B" correct="true">Menos pixels entram (cores “fracas”/acinzentadas saem)</answer>
-<answer type="C">A imagem fica mais clara</answer>
-<answer type="D">A máscara vira RGB</answer>
+- [ ] Mais pixels entram na máscara
+- [x] Menos pixels entram (cores “fracas”/acinzentadas saem)
+- [ ] A imagem fica mais clara
+- [ ] A máscara vira RGB
+
 </quiz>
 
 ---
@@ -165,14 +163,14 @@ e sempre cheque `m00 != 0`.
 
 #### Quiz (rápido)
 <quiz>
-<question>
 Por que é comum filtrar contornos por área mínima antes de desenhar/analisar?
-</question>
-<answer type="A">Para converter HSV em BGR</answer>
-<answer type="B">Para acelerar a câmera</answer>
-<answer type="C" correct="true">Para ignorar ruído (pequenos blobs) e focar em objetos relevantes</answer>
-<answer type="D">Porque OpenCV exige</answer>
+- [ ] Para converter HSV em BGR
+- [ ] Para acelerar a câmera
+- [x] Para ignorar ruído (pequenos blobs) e focar em objetos relevantes
+- [ ] Porque OpenCV exige
+
 </quiz>
+
 
 ---
 
