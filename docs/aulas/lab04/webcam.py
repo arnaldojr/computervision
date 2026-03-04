@@ -15,16 +15,16 @@ def image_da_webcam(img):
     """
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
      # Detect edges in the image and threshold it
-    edges = cv2.Laplacian(img, cv2.CV_8U, ksize=5)
-    
-    ret, mask = cv2.threshold(edges, 100, 255, cv2.THRESH_BINARY_INV)
+    # edges = cv2.Laplacian(img, cv2.CV_8U, ksize=5)
+    blur = cv2.blur(img,(25,25),0)
+    # ret, mask = cv2.threshold(blur, 100, 255, cv2.THRESH_BINARY_INV)
 
-    return mask
+    return blur
 
 
-vc = cv2.VideoCapture(0) ### significa que vou usar a minha webcam, 1,2,3
+vc = cv2.VideoCapture(1) ### significa que vou usar a minha webcam, 1,2,3
 
-#vc = cv2.VideoCapture("people-walking.mp4") ### suport video mp4. .avi  .mkv
+# vc = cv2.VideoCapture("people-walking.mp4") ### suport video mp4. .avi  .mkv
 
 #vc = cv2.VideoCapture("rtsp://192.168.52.25:800") ### significa que vou usar a minha webcam, 1,2,3
 
@@ -35,9 +35,9 @@ else:
     rval = False
 
 while rval:
-    
+    # processa a imagem da webcam
     img = image_da_webcam(frame)
-
+    # exibe a imagem processada e a original
     cv2.imshow("preview", img)
     cv2.imshow("original", frame)
 

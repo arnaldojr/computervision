@@ -8,10 +8,10 @@
 | Aula Magna<br>Apresentação do curso, dinâmica das aulas, datas importantes (CP)            | 10/02/2026            |
 | feriado carnaval                                                                           | 17/02/2026            |
 | Processamento de imagem digital                                                            | 24/02/2026            |
-| filtos de convolução, espaço de cores e contorno                                           | 03/03/2026            |
-| CP1                                                                                        | 10/03/2026            |
-| template matching, features ORB, SIFT                                                      | 17/03/2026            |
-| Classificação ML                                                                           | 24/03/2026            |
+| filtos de convolução                                                                       | 03/03/2026            |
+| espaço de cores e contorno                                                                 | 10/03/2026            |
+| CP1                                                                                        | 17/03/2026            |
+| template matching, features ORB, SIFT                                                      | 24/03/2026            |
 | API para CV                                                                                | 31/03/2026            |
 | CP2                                                                                        | 07/04/2026            |
 | Aplicações media pipe                                                                      | 14/04/2026            |
