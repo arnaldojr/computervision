@@ -11,14 +11,14 @@
 | filtos de convolução                                                                       | 03/03/2026            |
 | espaço de cores e contorno                                                                 | 10/03/2026            |
 | CP1                                                                                        | 17/03/2026            |
-| template matching, features ORB, SIFT                                                      | 24/03/2026            |
-| API para CV                                                                                | 31/03/2026            |
+| template matching                                                                          | 24/03/2026            |
+| features ORB, SIFT                                                                         | 31/03/2026            |
 | CP2                                                                                        | 07/04/2026            |
 | Aplicações media pipe                                                                      | 14/04/2026            |
 | Aplicações em Redes Neurais pré-treinadas                                                  | 21/04/2026            |
 | Aplicação de Transfer Learning                                                             | 28/04/2026            |
 | Detecção Moderna                                                                           | 05/05/2026            |
-| Deploy                                                                                     | 12/05/2026            |
+| Deploy API para CV                                                                         | 12/05/2026            |
 | CP3                                                                                        | 19/05/2026            |
 
 
