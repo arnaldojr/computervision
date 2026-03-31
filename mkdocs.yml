@@ -93,7 +93,7 @@ nav:
     - Aula 3 - Convolução e limiarização: aulas/aula3.md
     - Aula 4 - Espaço de cor e contorno: aulas/aula4.md
     - Aula 5 - Template Matching: aulas/aula5.md
-    # - Aula 6 - Classificação ML: aulas/aula6.md
+    - Aula 6 - Feature Extraction: aulas/aula6.md  
     # - Aula 7 - API para CV: aulas/aula7.md
     # - Aula 8 - CP2: aulas/aula8.md
     # - Aula 9 - CNN Prática: aulas/aula9.md
