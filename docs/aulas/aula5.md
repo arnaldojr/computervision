@@ -1,4 +1,4 @@
-# Aula 5 — Template Matching com OpenCV: encontrando padrões em imagens
+# Aula 5 — Template Matching: encontrando padrões em imagens
 
 Nesta aula você vai avançar para uma técnica clássica de **busca por padrão visual**: o **template matching**.
 

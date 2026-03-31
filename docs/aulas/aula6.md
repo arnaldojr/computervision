@@ -1,4 +1,4 @@
-# Aula 6 — Features e Descritores com OpenCV: encontrando correspondências robustas em imagens
+# Aula 6 — Features e Descritores
 
 Nesta aula você vai avançar para uma abordagem mais robusta de visão computacional: o uso de **features**, **keypoints** e **descritores** para localizar objetos em imagens. Alem de conhecer a tecnica de transformação de geometrica por meio da matriz de **Homografia**. 
 
