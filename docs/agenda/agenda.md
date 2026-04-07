@@ -14,11 +14,11 @@
 | template matching                                                                          | 24/03/2026            |
 | features ORB, SIFT                                                                         | 31/03/2026            |
 | CP2                                                                                        | 07/04/2026            |
-| Aplicações media pipe                                                                      | 14/04/2026            |
-| Aplicações em Redes Neurais pré-treinadas                                                  | 21/04/2026            |
-| Aplicação de Transfer Learning                                                             | 28/04/2026            |
-| Detecção Moderna                                                                           | 05/05/2026            |
-| Deploy API para CV                                                                         | 12/05/2026            |
+| MLP                                                                                        | 14/04/2026            |
+| Feriado Tiradentes                                                                         | 21/04/2026            |
+| MLP Continuação                                                                            | 28/04/2026            |
+| Deep Learning     CNN                                                                      | 05/05/2026            |
+| CNN continuação                                                                            | 12/05/2026            |
 | CP3                                                                                        | 19/05/2026            |
 
 
