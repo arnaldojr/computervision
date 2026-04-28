@@ -111,6 +111,10 @@ nav:
     # - Aula 10 - Detecção Moderna: aulas/aula10.md
     # - Aula 11 - Deploy: aulas/aula11.md
     # - CP3 - Projeto Final: aulas/cp3.md
+      # - Deep Learning:
+    - Aula 7 - Introdução Redes Neurais: 
+        - aulas/lab09/redesneurais.md
+        - aulas/lab09/backpropagation.md
   - Recursos:
     - Bibliografia: recursos/bibliografia.md
     - Ferramentas: recursos/ferramentas.md
