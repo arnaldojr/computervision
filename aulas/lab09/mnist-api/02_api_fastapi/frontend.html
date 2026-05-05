@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>MNIST API - Desenhe um dígito</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f7;
+      margin: 0;
+      padding: 40px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    p {
+      line-height: 1.5;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 32px;
+      align-items: start;
+      margin-top: 24px;
+    }
+
+    canvas {
+      background: black;
+      border: 3px solid #222;
+      border-radius: 12px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .buttons {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .result {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 230px;
+    }
+
+    .big-number {
+      font-size: 72px;
+      font-weight: bold;
+      margin: 12px 0;
+      color: #111827;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+
+    .tip {
+      margin-top: 20px;
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 760px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      body {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>MNIST API — Desenhe um dígito</h1>
+
+    <p>
+      Desenhe um número de <strong>0 a 9</strong> no quadro abaixo.
+      Ao clicar em <strong>Prever dígito</strong>, o navegador envia a imagem para o endpoint
+      <code>POST /predict</code>.
+    </p>
+
+    <div class="layout">
+      <section>
+        <canvas id="canvas" width="280" height="280"></canvas>
+
+        <div class="buttons">
+          <button class="primary" onclick="predictDigit()">Prever dígito</button>
+          <button class="secondary" onclick="clearCanvas()">Limpar</button>
+        </div>
+
+        <div class="tip">
+          <strong>Dica:</strong> desenhe grande, centralizado e com traço grosso.
+          O modelo foi treinado com imagens pequenas de 28x28 pixels.
+        </div>
+      </section>
+
+      <section class="result">
+        <h2>Resultado</h2>
+
+        <div id="status" class="muted">
+          Aguardando desenho...
+        </div>
+
+        <div id="prediction" class="big-number">-</div>
+
+        <h3>Resposta da API</h3>
+        <pre id="jsonResult">{}</pre>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let drawing = false;
+
+    function prepareCanvas() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 22;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "white";
+    }
+
+    function getPointerPosition(event) {
+      const rect = canvas.getBoundingClientRect();
+
+      if (event.touches && event.touches.length > 0) {
+        return {
+          x: event.touches[0].clientX - rect.left,
+          y: event.touches[0].clientY - rect.top
+        };
+      }
+
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+
+    function startDrawing(event) {
+      event.preventDefault();
+      drawing = true;
+
+      const pos = getPointerPosition(event);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(event) {
+      if (!drawing) return;
+
+      event.preventDefault();
+
+      const pos = getPointerPosition(event);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function stopDrawing(event) {
+      event.preventDefault();
+      drawing = false;
+    }
+
+    function clearCanvas() {
+      prepareCanvas();
+      document.getElementById("status").textContent = "Aguardando desenho...";
+      document.getElementById("prediction").textContent = "-";
+      document.getElementById("jsonResult").textContent = "{}";
+    }
+
+    async function predictDigit() {
+      const status = document.getElementById("status");
+      const prediction = document.getElementById("prediction");
+      const jsonResult = document.getElementById("jsonResult");
+
+      status.textContent = "Enviando imagem para a API...";
+      prediction.textContent = "-";
+
+      canvas.toBlob(async function(blob) {
+        const formData = new FormData();
+        formData.append("file", blob, "desenho.png");
+
+        try {
+          const response = await fetch("/predict", {
+            method: "POST",
+            body: formData
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            status.textContent = "Erro na predição.";
+            jsonResult.textContent = JSON.stringify(data, null, 2);
+            return;
+          }
+
+          status.textContent = "Predição realizada com sucesso.";
+          prediction.textContent = data.classe_prevista;
+          jsonResult.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+          status.textContent = "Erro ao conectar com a API.";
+          jsonResult.textContent = String(error);
+        }
+      }, "image/png");
+    }
+
+    canvas.addEventListener("mousedown", startDrawing);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", stopDrawing);
+    canvas.addEventListener("mouseleave", stopDrawing);
+
+    canvas.addEventListener("touchstart", startDrawing);
+    canvas.addEventListener("touchmove", draw);
+    canvas.addEventListener("touchend", stopDrawing);
+
+    prepareCanvas();
+  </script>
+</body>
+</html>
