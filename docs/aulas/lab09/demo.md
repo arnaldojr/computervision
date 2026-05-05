@@ -8,6 +8,10 @@ Material para a aula prática de Deep Learning + API de Visão Computacional, on
 
 Esta página incorpora a demo publicada no Render.
 
+!!!info "Observação"
+     O render pode demorar um pouco para iniciar, pois está em modo gratuito, o servidor pode estar "dormindo". Se isso acontecer, aguarde alguns minutos e tente recarregar a página. Se ainda assim não funcionar, tente abrir o link direto acima.
+
+
 <iframe
   src="https://api-fastapi-adc1.onrender.com/"
   width="100%"
@@ -19,8 +23,4 @@ Esta página incorpora a demo publicada no Render.
 Se o iframe não carregar no seu navegador, abra diretamente:
 
 [Demo online no Render](https://api-fastapi-adc1.onrender.com/)
-
-!!!info "Observação"
-     O render pode demorar um pouco para iniciar, pois está em modo gratuito, o servidor pode estar "dormindo". Se isso acontecer, aguarde alguns segundos e tente recarregar a página. Se ainda assim não funcionar, tente abrir o link direto acima.
-
 
