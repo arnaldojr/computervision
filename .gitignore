@@ -26,3 +26,10 @@ __pycache__/
 # Python virtual environments
 .venv/
 .env    
+venv/
+venv 
+
+.github
+
+data/
+artifacts/

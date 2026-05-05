@@ -115,6 +115,7 @@ nav:
     - Aula 7 - Introdução Redes Neurais: 
         - aulas/lab09/redesneurais.md
         - aulas/lab09/backpropagation.md
+        - Demo API MNIST: aulas/lab09/demo.md
   - Recursos:
     - Bibliografia: recursos/bibliografia.md
     - Ferramentas: recursos/ferramentas.md
