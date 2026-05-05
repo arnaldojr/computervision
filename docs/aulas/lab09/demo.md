@@ -3,9 +3,7 @@
 
 Material para a aula prática de Deep Learning + API de Visão Computacional, onde treinamos um modelo simples no PyTorch e o expomos via FastAPI, com uma interface web para upload e desenho.
 
-[ Treinando o modelo MNIST em PyTorch ](mnist-api/01_treinando_pytorch.ipynb){ .md-button .md-button-primary }
-
-[API FastAPI](mnist-api/02_api_fastapi.zip){ .md-button .md-button-primary }
+[Notebook PyTorch + API FastAPI](mnist-api/02_api_fastapi.zip){ .md-button .md-button-primary }
 
 
 Esta página incorpora a demo publicada no Render.
