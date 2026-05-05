@@ -106,7 +106,6 @@ nav:
     - Aula 5 - Template Matching: aulas/aula5.md
     - Aula 6 - Feature Extraction: aulas/aula6.md  
     # - Aula 7 - API para CV: aulas/aula7.md
-    # - Aula 8 - CP2: aulas/aula8.md
     # - Aula 9 - CNN Prática: aulas/aula9.md
     # - Aula 10 - Detecção Moderna: aulas/aula10.md
     # - Aula 11 - Deploy: aulas/aula11.md
@@ -116,6 +115,9 @@ nav:
         - aulas/lab09/redesneurais.md
         - aulas/lab09/backpropagation.md
         - Demo API MNIST: aulas/lab09/demo.md
+    - Aula 8 - CNN: aulas/aula8.md
+
+
   - Recursos:
     - Bibliografia: recursos/bibliografia.md
     - Ferramentas: recursos/ferramentas.md
