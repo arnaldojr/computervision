@@ -5,7 +5,7 @@ Vamos usar o modelo treinado no notebook como motor de uma API.
 ## Fluxo da aplicação
 
 ```text
-aluno seleciona uma imagem no navegador
+usuario seleciona uma imagem no navegador
         ↓
 frontend envia arquivo para POST /predict
         ↓
