@@ -31,11 +31,11 @@ cnn_api_fastapi_parte2/
 ├── requirements.txt
 ├── README.md
 └── artifacts/
-        ├── cifar10_cnn.pt
+    ├── cifar10_cnn.pt
     └── metadata.json
 ```
 
-## 2. Copiar os artefatos do notebook
+## 2. artefatos do notebook
 
 Depois de executar o notebook da Parte 1, ele cria:
 
@@ -44,7 +44,7 @@ artifacts/cifar10_cnn.pt
 artifacts/metadata.json
 ```
 
-Copie esses arquivos para dentro da pasta `artifacts/` deste projeto.
+Verifique se os arquivos estão na pasta `artifacts/` deste projeto.
 
 O resultado deve ficar assim:
 

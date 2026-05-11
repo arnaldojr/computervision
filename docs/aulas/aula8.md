@@ -6,7 +6,8 @@ Treinamento de uma CNN no PyTorch com CIFAR-10 e deploy do modelo via FastAPI, c
 
 Vamos manter o mesmo estilo de projeto que voce ja conhece no curso:
 
-[Notebook + API FastAPI (download)](lab10/api/02_api_fastapi.zip){ .md-button .md-button-primary }
+[Notebook-CNN + API FastAPI (download)](lab10/api/02_api_fastapi.zip){ .md-button .md-button-primary }
+
 
 ### o que são CNNs e para que servem?
 
@@ -33,7 +34,6 @@ Aplicações comuns:
 ### Arquitetura Geral de uma CNN
 
 ![alt text](lab10/imgs/lab10/imgs/same_padding_no_strides.gif)
-
 
 
 
@@ -430,7 +430,7 @@ em pytorch:
 import torch.nn as nn 
 class LeNet5(nn.Module):
     def __init__(self):
-        super(LeNet5, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(1, 6, kernel_size=5)
         self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
@@ -475,7 +475,7 @@ em pytorch:
 import torch.nn as nn
 class AlexNet(nn.Module):
     def __init__(self, num_classes=1000):
-        super(AlexNet, self).__init__()
+        super().__init__()
         self.features = nn.Sequential(
             nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=2),
             nn.ReLU(inplace=True),
@@ -520,7 +520,7 @@ em pytorch:
 import torch.nn as nn
 class VGG16(nn.Module):
     def __init__(self, num_classes=1000):
-        super(VGG16, self).__init__()
+        super().__init__()
         self.features = nn.Sequential(
             # Bloco 1
             nn.Conv2d(3, 64, kernel_size=3, padding=1),
@@ -596,7 +596,7 @@ import torch.nn as nn
 
 class BasicBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1):
-        super(BasicBlock, self).__init__()
+        super().__init__()
 
         self.conv1 = nn.Conv2d(
             in_channels,
@@ -654,7 +654,7 @@ class BasicBlock(nn.Module):
 
 class ResNet18(nn.Module):
     def __init__(self, num_classes=1000):
-        super(ResNet18, self).__init__()
+        super().__init__()
 
         self.in_channels = 64
 
