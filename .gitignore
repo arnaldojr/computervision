@@ -32,6 +32,4 @@ venv
 .github
 
 data/
-artifacts/docs/aulas/lab10/api/02_api_fastapi.zip
-docs/aulas/lab10/api/02_api_fastapi.zip
 **/artifacts/
