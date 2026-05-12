@@ -4,7 +4,7 @@
 Material da Aula 8 de Deep Learning + API de Visão Computacional.
 Treinamento de uma CNN no PyTorch com CIFAR-10 e deploy do modelo via FastAPI, com interface web para upload de imagem.
 
-Vamos manter o mesmo estilo de projeto que voce ja conhece no curso:
+Vamos manter o mesmo estilo de projeto que voce já conhece no curso:
 
 [Notebook-CNN + API FastAPI (download)](lab10/api/02_api_fastapi.zip){ .md-button .md-button-primary }
 
@@ -31,10 +31,10 @@ Aplicações comuns:
 | Compartilhamento de pesos | Não | Sim |
 | Escalabilidade em visão | Limitada | Alta |
 
-### Arquitetura Geral de uma CNN
-
 ![alt text](lab10/imgs/same_padding_no_strides.gif)
 
+
+---
 
 ### Convolução (Intuição)
 
@@ -42,89 +42,96 @@ A convolução mede o alinhamento entre um pequeno padrão (kernel) e regiões d
 
 ![alt text](lab10/imgs/convnet.png)
 
+=== "Intuição"
 
-**Convolução Contínua:**
+    O kernel "varre" a imagem e produz um mapa de ativações (feature map).
+    Regiões que se parecem com o padrão do kernel geram respostas mais fortes.
 
-$$
-(f * g)(t) = \int_{-\infty}^{\infty} f(\tau)g(t-\tau)\,d\tau
-$$
+=== "Contínua"
 
-**Convolução Discreta (usada em CNNs):**
+    $$
+    (f * g)(t) = \int_{-\infty}^{\infty} f(\tau)g(t-\tau)\,d\tau
+    $$
+
+=== "Discreta (CNNs)"
+
+    $$
+    (f * g)[n] = \sum_{m=-\infty}^{\infty} f[m]g[n-m]
+    $$
+
+=== "2D para Imagens"
+
+    Em visão computacional, usa-se tecnicamente correlação cruzada (sem inversão do kernel), mas o nome convolução é mantido por convenção.
+
+    $$
+    S(i,j) = (I * K)(i,j) = \sum_{m}\sum_{n} I(i+m, j+n)\,K(m,n)
+    $$
+
+    Onde:
+
+    - `I`: imagem de entrada
+    - `K`: kernel (filtro)
+    - `S`: feature map
+    - `m, n`: índices do kernel
+    - `i, j`: índices da posição atual na imagem de entrada
 
 
-$$
-(f * g)[n] = \sum_{m=-\infty}^{\infty} f[m]g[n-m]
-$$
-
-### Convolução 2D para Imagens
-
-Em visão usamos, tecnicamente, **correlação cruzada** (não invertendo o kernel), mas chamamos de convolução por convenção.
-
-![alt text](lab10/imgs/conv3d.gif)
-
-$$
-S(i,j) = (I * K)(i,j) = \sum_{m}\sum_{n} I(i+m, j+n)\,K(m,n)
-$$
-
-Onde:
-
-- `I`: Imagem de entrada
-- `K`: Kernel (filtro)
-- `S`: Feature map (mapa de características)
+    ![Convolução 3D](lab10/imgs/conv3d.gif)
 
 ### Exemplo Prático de Convolução
 
-**Imagem 5×5:**
-$$
-I = \begin{bmatrix}
-1 & 2 & 3 & 0 & 1 \\\\
-0 & 1 & 2 & 3 & 1 \\\\
-1 & 0 & 1 & 2 & 0 \\\\
-2 & 1 & 0 & 1 & 2 \\\\
-1 & 0 & 2 & 1 & 0
-\end{bmatrix}
-$$
+=== "Entrada e Kernel"
 
-**Kernel 3×3 (Detector de Borda):**
-$$
-K = \begin{bmatrix}
--1 & -1 & -1 \\\\
--1 & 8 & -1 \\\\
--1 & -1 & -1
-\end{bmatrix}
-$$
+    **Imagem 5x5:**
 
-**Resultado (Feature Map):**
-$$
-\begin{aligned}
-S(1,1) &= (-1\cdot1) + (-1\cdot2) + (-1\cdot3) \\
-  &\quad + (-1\cdot0) + (8\cdot1) + (-1\cdot2) \\
-  &\quad + (-1\cdot1) + (-1\cdot0) + (-1\cdot1) \\
-  &= -5
-\end{aligned}
-$$
+    $$
+    I = \begin{bmatrix}
+    1 & 2 & 3 & 0 & 1 \\\\
+    0 & 1 & 2 & 3 & 1 \\\\
+    1 & 0 & 1 & 2 & 0 \\\\
+    2 & 1 & 0 & 1 & 2 \\\\
+    1 & 0 & 2 & 1 & 0
+    \end{bmatrix}
+    $$
+
+    **Kernel 3x3 (detector de borda):**
+
+    $$
+    K = \begin{bmatrix}
+    -1 & -1 & -1 \\\\
+    -1 & 8 & -1 \\\\
+    -1 & -1 & -1
+    \end{bmatrix}
+    $$
+
+=== "Cálculo de S(1,1)"
+
+    $$
+    \begin{aligned}
+    S(1,1) &= (-1\cdot1) + (-1\cdot2) + (-1\cdot3) \\
+            &\quad + (-1\cdot0) + (8\cdot1) + (-1\cdot2) \\
+            &\quad + (-1\cdot1) + (-1\cdot0) + (-1\cdot1) \\
+            &= -5
+    \end{aligned}
+    $$
+
+---
 
 ## Parametros da Camada Convolucional
 
-### 1. Kernel/Filtro
+Uma camada convolucional não apenas aplica filtros sobre a imagem. Seus parâmetros definem **o que será observado**, **como o filtro se desloca** e **qual será o tamanho da saída**.
 
-- **Tamanho**: Normalmente 3×3, 5×5, 7×7
-- **Profundidade do kernel**: Igual à profundidade da entrada
-- **Nº de filtros**: Hyperparâmetro (32, 64, 128, 256...)
-- **Pesos**: Aprendidos durante treinamento
+=== "Kernel/Filtro"
 
-### 2. Stride (Passo)
+    O **kernel** é a pequena matriz de pesos que percorre a imagem procurando padrões locais, como bordas, texturas e formas simples.
 
-- **Definição**: Quantos pixels o kernel "pula" a cada operação
-- **Stride = 1**: Sobreposição máxima
-- **Stride = 2**: Reduz dimensão pela metade
+=== "Stride"
 
+    O **stride** define o tamanho do passo do kernel ao percorrer a imagem.
 
-### 3. Padding (Preenchimento)
+=== "Padding"
 
-- **Valid**: Sem padding (saída menor)
-- **Same**: Padding para manter dimensão
-- **Causal**: Para dados sequenciais
+    O **padding** adiciona bordas artificiais à imagem antes da convolução. Ele é usado para controlar a perda de dimensão nas bordas.
 
 <quiz>
 Efeito de padding='valid' com kernel 3×3 e stride=1 em H×W?
@@ -147,68 +154,123 @@ Stride>1 “pula” posições, gerando feature maps menores e operação mais b
 </quiz>
 
 
+---
 
 ## Tipos de Convoluções
 
 ### Convolução Standard
 
+Além da convolução padrão, existem variações que modificam **como os filtros operam sobre os canais**, **como ampliam o campo de visão** ou **como aumentam a resolução espacial**.
+
+=== "Standard"
+
+    A convolução padrão aplica vários filtros sobre todos os canais da entrada.  
+    Em uma imagem RGB, cada filtro observa os 3 canais ao mesmo tempo.
+
+    ```python title="conv_standard.py" linenums="1" hl_lines="2 3 4"
+    nn.Conv2d(
+        in_channels=3,
+        out_channels=32,
+        kernel_size=3,
+        stride=1,
+        padding=1
+    )
+    ```
+
+    Nesse exemplo, a camada recebe uma imagem com 3 canais e gera 32 mapas de características.
+
+    ```text
+    Entrada: [N, 3, H, W]
+    Saída:   [N, 32, H, W]
+    ```
+
+    O `padding=1` preserva altura e largura quando usamos `kernel_size=3` e `stride=1`.
+
+=== "Depthwise Separable"
+
+    A convolução separável em profundidade divide a operação em duas etapas:
+
+    1. **Depthwise:** aplica filtros espaciais em cada canal separadamente.
+    2. **Pointwise:** usa convoluções `1x1` para combinar os canais e gerar novos mapas de características.
+
+    ```python title="conv_depthwise_pointwise.py" linenums="1" hl_lines="6 9 15"
+    import torch.nn as nn
+
+    depthwise = nn.Conv2d(
+        in_channels=3,
+        out_channels=3,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        groups=3
+    )
+
+    pointwise = nn.Conv2d(
+        in_channels=3,
+        out_channels=32,
+        kernel_size=1
+    )
+    ```
+
+    Na etapa **depthwise**, o parâmetro `groups=3` faz com que cada canal da imagem RGB seja processado separadamente.
+
+    ```text
+    Entrada:   [N, 3, H, W]
+    Depthwise: [N, 3, H, W]
+    Pointwise: [N, 32, H, W]
+    ```
+
+    A etapa **pointwise** usa `kernel_size=1` para misturar os canais em cada posição espacial e produzir os 32 mapas de características finais.
 
 
-```python
-nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1)
-```
-onde:
-- `in_channels`: número de canais da entrada (ex: 3 para RGB)
-- `out_channels`: número de filtros (feature maps) gerados pela camada
-- `kernel_size`: tamanho do filtro (ex: 3 para 3x3)
-- `stride`: passo da convolução (ex: 1 para sem sobreposição)
-- `padding`: tipo de preenchimento (ex: 1 para manter dimensão)
+=== "Dilatada (Atrous)"
 
-### Convolução Depthwise Separable
+    A convolução dilatada aumenta o campo de visão do filtro sem aumentar o número de pesos.
 
+    ```python title="conv_dilatada.py" linenums="1" hl_lines="1 7"
+    nn.Conv2d(
+        in_channels=3,
+        out_channels=32,
+        kernel_size=3,
+        stride=1,
+        padding=2,
+        dilation=2
+    )
+    ```
 
+    O parâmetro essencial é `dilation=2`. Ele cria espaçamentos entre os elementos do kernel.
 
-```python
-# Depthwise
-nn.Conv2d(in_channels=3, out_channels=3, kernel_size=3, stride=1, padding=1, groups=3)
-# Pointwise
-nn.Conv2d(in_channels=3, out_channels=32, kernel_size=1)
-``` 
+    ```text
+    Kernel 3x3 normal:     observa vizinhos próximos
+    Kernel 3x3 dilatado:   observa uma região maior
+    ```
 
-onde:
-- `groups=3` indica que cada canal é convoluído separadamente (depthwise)
-- A convolução pointwise (1x1) combina os canais resultantes para gerar os 32 filtros finais.
+    É útil quando queremos capturar contexto mais amplo sem reduzir a resolução espacial, como em segmentação semântica.
 
-- **Vantagem**: Menos parâmetros (~9x redução)
-- **Uso**: MobileNets, Xception
+=== "Transposta"
 
+    A convolução transposta é usada para aumentar a dimensão espacial de um feature map.
 
+    ```python title="conv_transposta.py" linenums="1" hl_lines="1 5"
+    nn.ConvTranspose2d(
+        in_channels=32,
+        out_channels=3,
+        kernel_size=3,
+        stride=2
+    )
+    ```
 
-### Convolução Dilatada (Atrous)
+    O `ConvTranspose2d` faz uma operação de upsampling aprendível.  
+    Com `stride=2`, a tendência é aumentar a altura e a largura da saída.
 
+    ```text
+    Entrada: feature map menor
+    Saída:   feature map maior
+    ```
 
+    É comum em autoencoders, GANs e redes de segmentação.
 
-```python
-nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=2, dilation=2)
-```   
-onde:
-- `dilation=2` indica que os elementos do kernel são espaçados, aumentando o campo receptivo sem aumentar o número de parâmetros.
-
-- **Vantagem**: Campo receptivo maior sem perder resolução
-- **Uso**: Segmentação semântica
-
-### Convolução Transposta (Deconvolução)
-
-
-
-```python
-nn.ConvTranspose2d(in_channels=32, out_channels=3, kernel_size=3, stride=2)   
-```
-- **Uso**: Upsampling, GANs, Autoencoders
-
-onde:
-- `ConvTranspose2d` é usada para aumentar a dimensão espacial, funcionando como o inverso da convolução padrão.
-
+---
 
 ### Visualização da Convolução
 
@@ -315,51 +377,51 @@ onde:
 </div>
 
 
+---
+
 ## Pooling e Subsampling
 
-![alt text](lab10/imgs/poolingexp1.png)
+![Pooling](lab10/imgs/poolingexp1.png)
 
-Diminui tamanho dos feature maps alem de permitir que pequenas translações não afetem resultado, ajuda na redução de overfitting e acelera o processamento.
+Pooling reduz tamanho dos feature maps, melhora robustez a pequenas translações, ajuda no controle de overfitting e acelera o processamento.
 
-### Max Pooling
+=== "Max Pooling"
 
-![alt text](lab10/imgs/pooling.png)
+    ![Max pooling](lab10/imgs/pooling.png)
 
+    ```python title="max_pooling.py" linenums="1" hl_lines="1"
+    nn.MaxPool2d(kernel_size=(2,2), stride=(2,2))
+    ```
+    onde:
 
-
-```python
-nn.MaxPool2d(kernel_size=(2,2), stride=(2,2))
-```
-Mantém o valor mais forte (presença de padrão).
-
-onde:
-- `kernel_size=(2,2)`: janela de pooling 2x2
-- `stride=(2,2)`: move a janela 2 pixels (sem sobreposição)
-
-### Average Pooling
-
-Suaviza (média local), diluindo picos.
+    - `kernel_size=(2,2)`: janela de pooling 2x2
+    - `stride=(2,2)`: move a janela 2 pixels (sem sobreposição)
 
 
-```python
-nn.AvgPool2d(kernel_size=(2,2), stride=(2,2))
-```
-onde:
-- `kernel_size=(2,2)`: janela de pooling 2x2
-- `stride=(2,2)`: move a janela 2 pixels (sem sobreposição)
+    Mantém a ativação mais forte da janela.
 
+=== "Average Pooling"
 
-### Adaptive Average Pooling
+    ![Average pooling](lab10/imgs/avg.png)
 
-Resume cada feature map em um único número. Substitui densas finais, reduz parâmetros.
+    ```python title="avg_pooling.py" linenums="1" hl_lines="1"
+    nn.AvgPool2d(kernel_size=(2,2), stride=(2,2))
+    ```
 
+    onde:
 
+    - `kernel_size=(2,2)`: janela de pooling 2x2
+    - `stride=(2,2)`: move a janela 2 pixels (sem sobreposição)
 
-```python
-nn.AdaptiveAvgPool2d((1,1))
-```
-onde:
-- `AdaptiveAvgPool2d((1,1))` ajusta o kernel para reduzir cada feature map a 1x1, independentemente do tamanho de entrada.
+    Faz média local, suavizando picos.
+
+=== "Adaptive Average Pooling"
+
+    ```python title="adaptive_avg_pooling.py" linenums="1" hl_lines="1"
+    nn.AdaptiveAvgPool2d((1,1))
+    ```
+
+    Resume cada feature map em um único número. Substitui densas finais, reduz parâmetros.
 
 ---
 
@@ -377,357 +439,349 @@ Max enfatiza presença; Average enfatiza contexto médio.
 
 ## Batch Normalization
 
-![alt text](lab10/imgs/image-2.png)
+=== "Batch Normalization"
 
-A **Batch Normalization** é uma técnica que normaliza as ativações de uma camada, mantendo a média próxima de 0 e o desvio padrão próximo de 1.
+    ![BatchNorm](lab10/imgs/image-2.png)
 
-- Acelera o treinamento
-- Reduz a sensibilidade à inicialização dos pesos
-- Permite usar taxas de aprendizado maiores
-- Atua como uma forma leve de regularização
+    A BatchNorm normaliza ativações por mini-batch, estabilizando o treinamento.
 
-> Saiba mais em: [https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/](https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/)
+    ```python title="batchnorm.py" linenums="1" hl_lines="1"
+    nn.BatchNorm2d(num_features=32)
+    ```
 
+    onde:
+    
+    - `num_features=32` indica o número de canais a serem normalizados, geralmente igual ao número de filtros da camada anterior.
 
+    Benefícios:
 
-```python
-nn.BatchNorm2d(num_features=32)  # normaliza os 32 canais de saída da camada convolucional
-```
-onde:
-- `num_features=32` indica o número de canais a serem normalizados, geralmente igual ao número de filtros da camada anterior.
+    - acelera convergência
+    - reduz sensibilidade à inicialização
+    - permite learning rates maiores
 
-## Dropout
-
-![alt text](lab10/imgs/image-3.png)
-
-O **Dropout** é uma técnica de regularização que desativa aleatoriamente uma fração dos neurônios durante o treinamento. Isso força a rede a não depender de neurônios específicos, promovendo robustez e generalização. Utilize dropout principalmente em redes densas (fully connected).
-
-- Reduz o overfitting
-- Simples de implementar
-- Funciona bem em redes densas e convolucionais
-
-```python
-nn.Dropout(p=0.5)  # desativa 50% dos neurônios durante o treinamento
-```
-onde:
-- `p=0.5` indica a probabilidade de desativar cada neurônio durante o treinamento. Durante a inferência, o dropout é desativado e os pesos são escalados para compensar a ausência de dropout.
+    > Saiba mais em: [https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/](https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/)
 
 
-> Saiba mais em: [https://www.deeplearningbook.com.br/capitulo-23-como-funciona-o-dropout/](https://www.deeplearningbook.com.br/capitulo-23-como-funciona-o-dropout/)
 
+=== "Dropout"
+
+    ![Dropout](lab10/imgs/image-3.png)
+
+    O Dropout desativa neurônios aleatoriamente durante o treino para reduzir overfitting.
+
+    ```python title="dropout.py" linenums="1" hl_lines="1"
+    nn.Dropout(p=0.5)
+    ```
+
+    onde:
+
+    - `p=0.5` indica a probabilidade de desativar cada neurônio durante o treinamento. Durante a inferência, o dropout é desativado e os pesos são escalados para compensar a ausência de dropout.
+
+
+    > Saiba mais em: [https://www.deeplearningbook.com.br/capitulo-23-como-funciona-o-dropout/](https://www.deeplearningbook.com.br/capitulo-23-como-funciona-o-dropout/)
 
 ---
 
-
 ## Arquiteturas Clássicas de CNN
 
-### LeNet-5 (1998) - Yann LeCun
+=== "LeNet-5 (1998)"
 
-[![lenet](https://markdown-videos-api.jorgenkh.no/url?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DFwFduRA_L6Q)](https://www.youtube.com/watch?v=FwFduRA_L6Q)
+    [![lenet](https://markdown-videos-api.jorgenkh.no/url?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DFwFduRA_L6Q)](https://www.youtube.com/watch?v=FwFduRA_L6Q)
 
+    ![alt text](lab10/imgs/lenet.png)
 
-![alt text](lab10/imgs/lenet.png)
+    ```python title="lenet5.py" linenums="1" hl_lines="5 6 7 8 14 15 16 17 21"
+    import torch.nn as nn 
+    class LeNet5(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv1 = nn.Conv2d(1, 6, kernel_size=5)
+            self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
+            self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
+            self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
+            self.fc1 = nn.Linear(16*5*5, 120)
+            self.fc2 = nn.Linear(120, 84)
+            self.fc3 = nn.Linear(84, 10)
 
+        def forward(self, x):
+            x = torch.tanh(self.conv1(x))
+            x = self.pool1(x)
+            x = torch.tanh(self.conv2(x))
+            x = self.pool2(x)
+            x = x.view(-1, 16*5*5)  # flatten
+            x = torch.tanh(self.fc1(x))
+            x = torch.tanh(self.fc2(x))
+            x = torch.softmax(self.fc3(x), dim=1)
+            return x
+    ```
 
+    onde:
 
-
-```python
-import torch.nn as nn 
-class LeNet5(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 6, kernel_size=5)
-        self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
-        self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.fc1 = nn.Linear(16*5*5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = torch.tanh(self.conv1(x))
-        x = self.pool1(x)
-        x = torch.tanh(self.conv2(x))
-        x = self.pool2(x)
-        x = x.view(-1, 16*5*5)  # flatten
-        x = torch.tanh(self.fc1(x))
-        x = torch.tanh(self.fc2(x))
-        x = torch.softmax(self.fc3(x), dim=1)
-        return x
-```
-
-onde:
-- `Conv2d(1, 6, kernel_size=5)`: 1 canal de entrada (grayscale), 6 filtros, kernel 5x5
-- `AvgPool2d(kernel_size=2, stride=2)`: pooling 2x2 com stride 2
-- `Linear(16*5*5, 120)`: camada densa com 120 neurônios, recebendo a saída achatada da última camada convolucional.
-- a função de ativação usada é `tanh`, e a saída final é uma distribuição de probabilidade sobre as 10 classes usando `softmax`, o `dim=1` indica que a softmax é aplicada ao longo do último eixo (as classes).
+    - `Conv2d(1, 6, kernel_size=5)`: 1 canal de entrada (grayscale), 6 filtros, kernel 5x5
+    - `AvgPool2d(kernel_size=2, stride=2)`: pooling 2x2 com stride 2
+    - `Linear(16*5*5, 120)`: camada densa com 120 neurônios, recebendo a saída achatada da última camada convolucional.
+    - a função de ativação usada é `tanh`, e a saída final é uma distribuição de probabilidade sobre as 10 classes usando `softmax`, o `dim=1` indica que a softmax é aplicada ao longo do último eixo (as classes).
 
 
-### AlexNet (2012) - Alex Krizhevsky
+=== "AlexNet (2012)"
 
-Primeira grande vitória em ImageNet: ReLU em larga escala, Dropout, Data Augmentation pesado, uso de múltiplas GPUs.
+    ![AlexNet](lab10/imgs/AlexNet-1.png)
 
-![alt text](lab10/imgs/AlexNet-1.png)
-
-
-!!! note
-    A AlexNet foi um marco pois provou que CNNs profundas funcionavam em datasets massivos e impulsionou a revolução do Deep Learning.
+    Marco histórico: consolidou uso de ReLU, Dropout e treinamento em larga escala.
 
 
+    ```python title="alexnet_trecho.py" linenums="1" hl_lines="7 10 13 15 17 21 24"
+    import torch.nn as nn
+    class AlexNet(nn.Module):
+        def __init__(self, num_classes=1000):
+            super().__init__()
+            self.features = nn.Sequential(
+                nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=2),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+                nn.Conv2d(96, 256, kernel_size=5, padding=2),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+                nn.Conv2d(256, 384, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(384, 384, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(384, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+            )
+            self.classifier = nn.Sequential(
+                nn.Dropout(),
+                nn.Linear(256 * 6 * 6, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, num_classes),
+            ) 
+        def forward(self, x):
+            x = self.features(x)
+            x = x.view(x.size(0), 256 * 6 * 6)
+            x = self.classifier(x)
+            return x
+    ``` 
+
+    onde: 
+
+    - A arquitetura é composta por 5 camadas convolucionais, seguidas por 3 camadas densas. O número de filtros varia entre as camadas, começando em 96 e chegando a 384, antes de reduzir para 256 na última camada convolucional. As camadas densas têm 4096 neurônios cada, com dropout aplicado para reduzir overfitting.
+    - A função de ativação usada é `ReLU`, e o método `forward` define o fluxo de dados pela rede, primeiro passando pelas camadas convolucionais e depois pelas camadas densas após achatar a saída da última camada convolucional.
+
+=== "VGG (2014)"
+
+    ![VGG](lab10/imgs/image-1.png)
+
+    Estratégia: empilhar várias convoluções 3x3 + pooling.
+
+    ```python title="vgg_trecho.py" linenums="1" hl_lines="7 9 11 13 15 17 19 21 23 25"
+    import torch.nn as nn
+    class VGG16(nn.Module):
+        def __init__(self, num_classes=1000):
+            super().__init__()
+            self.features = nn.Sequential(
+                # Bloco 1
+                nn.Conv2d(3, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(64, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                # Bloco 2
+                nn.Conv2d(64, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                # Bloco 3
+                nn.Conv2d(128, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                # Bloco 4
+                nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(512, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(512, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                # Bloco 5
+                nn.Conv2d(512, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(512, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(512, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+            )
+            self.classifier = nn.Sequential(
+                nn.Linear(512 * 7 * 7, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, num_classes),
+            )
+        def forward(self, x):
+            x = self.features(x)
+            x = x.view(x.size(0), 512 * 7 * 7) # flatten
+            x = self.classifier(x)
+            return x
+    ```
+
+    onde:
+
+    - A arquitetura é composta por 5 blocos de convolução, cada um seguido por uma camada de pooling. O número de filtros dobra a cada bloco, começando em 64 e chegando a 512. Após as camadas convolucionais, há uma parte densa (classificador) com 3 camadas, onde as duas primeiras têm 4096 neurônios e a última camada tem `num_classes` neurônios, correspondendo ao número de classes de saída.
+    - A função de ativação usada é `ReLU`, e o dropout é aplicado entre as camadas densas para reduzir o overfitting. 
+    - O método `forward` define o fluxo de dados pela rede, primeiro passando pelas camadas convolucionais e depois pelas camadas densas após achatar a saída da última camada convolucional.
+
+=== "ResNet (2015)"
+
+    ![ResNet](lab10/imgs/image.png)
+
+    Introduziu conexões residuais para facilitar o fluxo de gradiente em redes profundas.
+
+    ```python title="residual_block.py" linenums="1" hl_lines="17 28 45 47 51 54 55 57"
+    import torch
+    import torch.nn as nn
 
 
-```python
-import torch.nn as nn
-class AlexNet(nn.Module):
-    def __init__(self, num_classes=1000):
-        super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(96, 256, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(256, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-        )
-        self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes),
-        ) 
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), 256 * 6 * 6)
-        x = self.classifier(x)
-        return x
-``` 
+    class BasicBlock(nn.Module):
+        def __init__(self, in_channels, out_channels, stride=1):
+            super().__init__()
+
+            self.conv1 = nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=3,
+                stride=stride,
+                padding=1,
+                bias=False
+            )
+            self.bn1 = nn.BatchNorm2d(out_channels)
+            self.relu = nn.ReLU(inplace=True)
+
+            self.conv2 = nn.Conv2d(
+                out_channels,
+                out_channels,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False
+            )
+            self.bn2 = nn.BatchNorm2d(out_channels)
+
+            self.downsample = None
+
+            if stride != 1 or in_channels != out_channels:
+                self.downsample = nn.Sequential(
+                    nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        kernel_size=1,
+                        stride=stride,
+                        bias=False
+                    ),
+                    nn.BatchNorm2d(out_channels)
+                )
+
+        def forward(self, x):
+            identity = x
+
+            out = self.conv1(x)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            if self.downsample is not None:
+                identity = self.downsample(x)
+
+            out = out + identity
+            out = self.relu(out)
+
+            return out
 
 
-### VGGNet (2014) - Oxford
+    class ResNet18(nn.Module):
+        def __init__(self, num_classes=1000):
+            super().__init__()
 
-![alt text](lab10/imgs/image-1.png)
+            self.in_channels = 64
 
-Convoluções pequenas (blocos de conv 3×3 + pooling) e profundas (16/19 camdas). 
-
-
-
-```python
-import torch.nn as nn
-class VGG16(nn.Module):
-    def __init__(self, num_classes=1000):
-        super().__init__()
-        self.features = nn.Sequential(
-            # Bloco 1
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            # Bloco 2
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            # Bloco 3
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            # Bloco 4
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            # Bloco 5
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, num_classes),
-        )
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), 512 * 7 * 7) # flatten
-        x = self.classifier(x)
-        return x
-```
-
-onde:
-- A arquitetura é composta por 5 blocos de convolução, cada um seguido por uma camada de pooling. O número de filtros dobra a cada bloco, começando em 64 e chegando a 512. Após as camadas convolucionais, há uma parte densa (classificador) com 3 camadas, onde as duas primeiras têm 4096 neurônios e a última camada tem `num_classes` neurônios, correspondendo ao número de classes de saída.
-- A função de ativação usada é `ReLU`, e o dropout é aplicado entre as camadas densas para reduzir o overfitting. 
-- O método `forward` define o fluxo de dados pela rede, primeiro passando pelas camadas convolucionais e depois pelas camadas densas após achatar a saída da última camada convolucional.
-
-
-### ResNet (2015) - Microsoft Research
-
-![alt text](lab10/imgs/image.png)
-
-Resolveu o problema da degradação em redes muito profundas com Conexões Residuais (Skip Connections).
-
-
-
-```python
-import torch
-import torch.nn as nn
-
-
-class BasicBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
-        super().__init__()
-
-        self.conv1 = nn.Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size=3,
-            stride=stride,
-            padding=1,
-            bias=False
-        )
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
-
-        self.conv2 = nn.Conv2d(
-            out_channels,
-            out_channels,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=False
-        )
-        self.bn2 = nn.BatchNorm2d(out_channels)
-
-        self.downsample = None
-
-        if stride != 1 or in_channels != out_channels:
-            self.downsample = nn.Sequential(
-                nn.Conv2d(
-                    in_channels,
-                    out_channels,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False
-                ),
-                nn.BatchNorm2d(out_channels)
+            self.conv1 = nn.Conv2d(
+                3,
+                64,
+                kernel_size=7,
+                stride=2,
+                padding=3,
+                bias=False
+            )
+            self.bn1 = nn.BatchNorm2d(64)
+            self.relu = nn.ReLU(inplace=True)
+            self.maxpool = nn.MaxPool2d(
+                kernel_size=3,
+                stride=2,
+                padding=1
             )
 
-    def forward(self, x):
-        identity = x
+            self.layer1 = self._make_layer(64,  blocks=2, stride=1)
+            self.layer2 = self._make_layer(128, blocks=2, stride=2)
+            self.layer3 = self._make_layer(256, blocks=2, stride=2)
+            self.layer4 = self._make_layer(512, blocks=2, stride=2)
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
+            self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+            self.fc = nn.Linear(512, num_classes)
 
-        out = self.conv2(out)
-        out = self.bn2(out)
+        def _make_layer(self, out_channels, blocks, stride):
+            layers = []
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out = out + identity
-        out = self.relu(out)
-
-        return out
-
-
-class ResNet18(nn.Module):
-    def __init__(self, num_classes=1000):
-        super().__init__()
-
-        self.in_channels = 64
-
-        self.conv1 = nn.Conv2d(
-            3,
-            64,
-            kernel_size=7,
-            stride=2,
-            padding=3,
-            bias=False
-        )
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(
-            kernel_size=3,
-            stride=2,
-            padding=1
-        )
-
-        self.layer1 = self._make_layer(64,  blocks=2, stride=1)
-        self.layer2 = self._make_layer(128, blocks=2, stride=2)
-        self.layer3 = self._make_layer(256, blocks=2, stride=2)
-        self.layer4 = self._make_layer(512, blocks=2, stride=2)
-
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512, num_classes)
-
-    def _make_layer(self, out_channels, blocks, stride):
-        layers = []
-
-        layers.append(
-            BasicBlock(
-                in_channels=self.in_channels,
-                out_channels=out_channels,
-                stride=stride
-            )
-        )
-
-        self.in_channels = out_channels
-
-        for _ in range(1, blocks):
             layers.append(
                 BasicBlock(
                     in_channels=self.in_channels,
                     out_channels=out_channels,
-                    stride=1
+                    stride=stride
                 )
             )
 
-        return nn.Sequential(*layers)
+            self.in_channels = out_channels
 
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
+            for _ in range(1, blocks):
+                layers.append(
+                    BasicBlock(
+                        in_channels=self.in_channels,
+                        out_channels=out_channels,
+                        stride=1
+                    )
+                )
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+            return nn.Sequential(*layers)
 
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
+        def forward(self, x):
+            x = self.conv1(x)
+            x = self.bn1(x)
+            x = self.relu(x)
+            x = self.maxpool(x)
 
-        return x
-```
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+            x = self.layer4(x)
+
+            x = self.avgpool(x)
+            x = torch.flatten(x, 1)
+            x = self.fc(x)
+
+            return x
+    ```
 
 
 
@@ -741,3 +795,9 @@ Conexões residuais ajudam principalmente a:
 
 O atalho preserva sinais e gradientes, mitigando o problema de degradação.
 </quiz>
+
+
+
+
+
+
