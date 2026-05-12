@@ -77,10 +77,10 @@ Onde:
 **Imagem 5×5:**
 $$
 I = \begin{bmatrix}
-1 & 2 & 3 & 0 & 1 \\
-0 & 1 & 2 & 3 & 1 \\
-1 & 0 & 1 & 2 & 0 \\
-2 & 1 & 0 & 1 & 2 \\
+1 & 2 & 3 & 0 & 1 \\\\
+0 & 1 & 2 & 3 & 1 \\\\
+1 & 0 & 1 & 2 & 0 \\\\
+2 & 1 & 0 & 1 & 2 \\\\
 1 & 0 & 2 & 1 & 0
 \end{bmatrix}
 $$
@@ -88,15 +88,20 @@ $$
 **Kernel 3×3 (Detector de Borda):**
 $$
 K = \begin{bmatrix}
--1 & -1 & -1 \\
--1 & 8 & -1 \\
+-1 & -1 & -1 \\\\
+-1 & 8 & -1 \\\\
 -1 & -1 & -1
 \end{bmatrix}
 $$
 
 **Resultado (Feature Map):**
 $$
-S(1,1) = (-1\cdot1) + (-1\cdot2) + (-1\cdot3) + (-1\cdot0) + (8\cdot1) + (-1\cdot2) + (-1\cdot1) + (-1\cdot0) + (-1\cdot1) = -5
+\begin{aligned}
+S(1,1) &= (-1\cdot1) + (-1\cdot2) + (-1\cdot3) \\
+  &\quad + (-1\cdot0) + (8\cdot1) + (-1\cdot2) \\
+  &\quad + (-1\cdot1) + (-1\cdot0) + (-1\cdot1) \\
+  &= -5
+\end{aligned}
 $$
 
 ## Parametros da Camada Convolucional
