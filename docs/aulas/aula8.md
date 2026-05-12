@@ -33,11 +33,8 @@ Aplicações comuns:
 
 ### Arquitetura Geral de uma CNN
 
-![alt text](lab10/imgs/lab10/imgs/same_padding_no_strides.gif)
+![alt text](lab10/imgs/same_padding_no_strides.gif)
 
-
-
-## Fundamentos Matemáticos
 
 ### Convolução (Intuição)
 
@@ -48,16 +45,16 @@ A convolução mede o alinhamento entre um pequeno padrão (kernel) e regiões d
 
 **Convolução Contínua:**
 
-```
-(f * g)(t) = ∫_{-∞}^{∞} f(τ)g(t-τ)dτ
-```
+$$
+(f * g)(t) = \int_{-\infty}^{\infty} f(\tau)g(t-\tau)\,d\tau
+$$
 
 **Convolução Discreta (usada em CNNs):**
 
 
-```
-(f * g)[n] = Σ_{m=-∞}^{∞} f[m]g[n-m]
-```
+$$
+(f * g)[n] = \sum_{m=-\infty}^{\infty} f[m]g[n-m]
+$$
 
 ### Convolução 2D para Imagens
 
@@ -65,10 +62,9 @@ Em visão usamos, tecnicamente, **correlação cruzada** (não invertendo o kern
 
 ![alt text](lab10/imgs/conv3d.gif)
 
-```
-S(i,j) = (I * K)(i,j) = ΣΣ I(i+m, j+n) × K(m,n)
-                        m n
-```
+$$
+S(i,j) = (I * K)(i,j) = \sum_{m}\sum_{n} I(i+m, j+n)\,K(m,n)
+$$
 
 Onde:
 
@@ -79,25 +75,29 @@ Onde:
 ### Exemplo Prático de Convolução
 
 **Imagem 5×5:**
-```
-1  2  3  0  1
-0  1  2  3  1
-1  0  1  2  0
-2  1  0  1  2
-1  0  2  1  0
-```
+$$
+I = \begin{bmatrix}
+1 & 2 & 3 & 0 & 1 \\
+0 & 1 & 2 & 3 & 1 \\
+1 & 0 & 1 & 2 & 0 \\
+2 & 1 & 0 & 1 & 2 \\
+1 & 0 & 2 & 1 & 0
+\end{bmatrix}
+$$
 
 **Kernel 3×3 (Detector de Borda):**
-```
--1 -1 -1
--1  8 -1
--1 -1 -1
-```
+$$
+K = \begin{bmatrix}
+-1 & -1 & -1 \\
+-1 & 8 & -1 \\
+-1 & -1 & -1
+\end{bmatrix}
+$$
 
 **Resultado (Feature Map):**
-```
-Posição (1,1): (-1×1) + (-1×2) + (-1×3) + (-1×0) + (8×1) + (-1×2) + (-1×1) + (-1×0) + (-1×1) = -5
-```
+$$
+S(1,1) = (-1\cdot1) + (-1\cdot2) + (-1\cdot3) + (-1\cdot0) + (8\cdot1) + (-1\cdot2) + (-1\cdot1) + (-1\cdot0) + (-1\cdot1) = -5
+$$
 
 ## Parametros da Camada Convolucional
 
@@ -147,7 +147,7 @@ Stride>1 “pula” posições, gerando feature maps menores e operação mais b
 
 ### Convolução Standard
 
-em pytorch:
+
 
 ```python
 nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1)
@@ -161,7 +161,7 @@ onde:
 
 ### Convolução Depthwise Separable
 
-em pytorch:
+
 
 ```python
 # Depthwise
@@ -181,7 +181,7 @@ onde:
 
 ### Convolução Dilatada (Atrous)
 
-em pytorch:
+
 
 ```python
 nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=2, dilation=2)
@@ -194,7 +194,7 @@ onde:
 
 ### Convolução Transposta (Deconvolução)
 
-em pytorch:
+
 
 ```python
 nn.ConvTranspose2d(in_channels=32, out_channels=3, kernel_size=3, stride=2)   
@@ -320,7 +320,7 @@ Diminui tamanho dos feature maps alem de permitir que pequenas translações nã
 
 ![alt text](lab10/imgs/pooling.png)
 
-em pytorch:
+
 
 ```python
 nn.MaxPool2d(kernel_size=(2,2), stride=(2,2))
@@ -334,7 +334,7 @@ onde:
 ### Average Pooling
 
 Suaviza (média local), diluindo picos.
-em pytorch:
+
 
 ```python
 nn.AvgPool2d(kernel_size=(2,2), stride=(2,2))
@@ -348,7 +348,7 @@ onde:
 
 Resume cada feature map em um único número. Substitui densas finais, reduz parâmetros.
 
-em pytorch:
+
 
 ```python
 nn.AdaptiveAvgPool2d((1,1))
@@ -383,7 +383,7 @@ A **Batch Normalization** é uma técnica que normaliza as ativações de uma ca
 
 > Saiba mais em: [https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/](https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/)
 
-em pytorch:
+
 
 ```python
 nn.BatchNorm2d(num_features=32)  # normaliza os 32 canais de saída da camada convolucional
@@ -424,7 +424,7 @@ onde:
 ![alt text](lab10/imgs/lenet.png)
 
 
-em pytorch:
+
 
 ```python
 import torch.nn as nn 
@@ -469,7 +469,7 @@ Primeira grande vitória em ImageNet: ReLU em larga escala, Dropout, Data Augmen
     A AlexNet foi um marco pois provou que CNNs profundas funcionavam em datasets massivos e impulsionou a revolução do Deep Learning.
 
 
-em pytorch:
+
 
 ```python
 import torch.nn as nn
@@ -514,7 +514,7 @@ class AlexNet(nn.Module):
 
 Convoluções pequenas (blocos de conv 3×3 + pooling) e profundas (16/19 camdas). 
 
-em pytorch:
+
 
 ```python
 import torch.nn as nn
@@ -587,7 +587,7 @@ onde:
 
 Resolveu o problema da degradação em redes muito profundas com Conexões Residuais (Skip Connections).
 
-em pytorch:
+
 
 ```python
 import torch
