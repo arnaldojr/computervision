@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Transfer Learning API — CIFAR-10</title>
+  <style>
+    body { font-family: "Source Sans 3","Segoe UI",sans-serif; background:#f5f5f7; margin:0; padding:40px; color:#222; }
+    .container { max-width:900px; margin:0 auto; background:white; border-radius:16px; padding:32px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+    h1 { margin-top:0; font-size:28px; }
+    p { line-height:1.5; }
+    .layout { display:grid; grid-template-columns:340px 1fr; gap:32px; align-items:start; margin-top:24px; }
+    .preview { width:100%; aspect-ratio:1/1; background:#e5e7eb; border:3px dashed #6b7280; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; color:#4b5563; font-size:14px; text-align:center; padding:8px; box-sizing:border-box; }
+    .preview img { width:100%; height:100%; object-fit:cover; }
+    .buttons { margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; }
+    button { border:none; padding:12px 18px; border-radius:10px; font-size:15px; cursor:pointer; font-weight:bold; }
+    .primary { background:#0d9488; color:white; }
+    .secondary { background:#e5e7eb; color:#111827; }
+    .result { background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:20px; min-height:230px; }
+    .big-class { font-size:28px; font-weight:bold; margin:12px 0; color:#111827; }
+    .prob { font-size:20px; color:#0d9488; margin-bottom:8px; }
+    .muted { color:#6b7280; font-size:14px; }
+    pre { background:#111827; color:#e5e7eb; padding:16px; border-radius:10px; overflow-x:auto; font-size:13px; }
+    .tip { margin-top:20px; background:#f0fdfa; border-left:4px solid #0d9488; padding:12px 16px; border-radius:8px; }
+    @media(max-width:760px){.layout{grid-template-columns:1fr;}body{padding:20px;}}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Transfer Learning API — CIFAR-10</h1>
+    <p>
+      Modelo <strong>MobileNetV3-Small</strong> com fine-tuning no CIFAR-10 (10 classes).
+      Envie uma imagem e compare com o resultado do Lab 10 (CNN treinada do zero).
+    </p>
+    <div class="layout">
+      <section>
+        <div id="preview" class="preview">Nenhuma imagem selecionada.</div>
+        <div class="buttons"><input id="fileInput" type="file" accept="image/*" /></div>
+        <div class="buttons">
+          <button class="primary" onclick="predictImage()">Classificar imagem</button>
+          <button class="secondary" onclick="clearSelection()">Limpar</button>
+        </div>
+        <div class="tip">
+          <strong>Classes CIFAR-10:</strong> avião, automóvel, pássaro, gato, cervo,
+          cachorro, sapo, cavalo, navio, caminhão.
+        </div>
+      </section>
+      <section class="result">
+        <h2>Resultado</h2>
+        <div id="status" class="muted">Aguardando imagem...</div>
+        <div id="prediction" class="big-class">—</div>
+        <div id="prob" class="prob"></div>
+        <div id="top3" class="muted"></div>
+        <h3>Resposta da API</h3>
+        <pre id="jsonResult">{}</pre>
+      </section>
+    </div>
+  </main>
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const preview   = document.getElementById("preview");
+
+    function clearSelection() {
+      fileInput.value = "";
+      preview.innerHTML = "Nenhuma imagem selecionada.";
+      ["status","prediction","prob","top3"].forEach(id => document.getElementById(id).textContent = id === "prediction" ? "—" : "");
+      document.getElementById("jsonResult").textContent = "{}";
+    }
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="preview" />`;
+    });
+
+    async function predictImage() {
+      const file = fileInput.files?.[0];
+      if (!file) { document.getElementById("status").textContent = "Selecione uma imagem."; return; }
+
+      document.getElementById("status").textContent = "Enviando para a API...";
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+
+      try {
+        const response = await fetch("/predict", { method: "POST", body: formData });
+        const data = await response.json();
+        if (!response.ok) { document.getElementById("status").textContent = "Erro."; document.getElementById("jsonResult").textContent = JSON.stringify(data, null, 2); return; }
+
+        document.getElementById("status").textContent = "Classificação concluída.";
+        document.getElementById("prediction").textContent = data.classe_prevista;
+        document.getElementById("prob").textContent = `Confiança: ${(data.probabilidade * 100).toFixed(1)}%`;
+        document.getElementById("top3").innerHTML = "Top-3: " + data.top3.map(i => `${i.classe} (${(i.probabilidade*100).toFixed(1)}%)`).join(" · ");
+        document.getElementById("jsonResult").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("status").textContent = "Erro ao conectar com a API.";
+        document.getElementById("jsonResult").textContent = String(err);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -104,18 +104,22 @@ nav:
     - Aula 3 - Convolução e limiarização: aulas/aula3.md
     - Aula 4 - Espaço de cor e contorno: aulas/aula4.md
     - Aula 5 - Template Matching: aulas/aula5.md
-    - Aula 6 - Feature Extraction: aulas/aula6.md  
-    # - Aula 7 - API para CV: aulas/aula7.md
-    # - Aula 9 - CNN Prática: aulas/aula9.md
-    # - Aula 10 - Detecção Moderna: aulas/aula10.md
-    # - Aula 11 - Deploy: aulas/aula11.md
-    # - CP3 - Projeto Final: aulas/cp3.md
-      # - Deep Learning:
-    - Aula 7 - Introdução Redes Neurais: 
+    - Aula 6 - Feature Extraction: aulas/aula6.md
+    - Aula 7 - Introdução Redes Neurais:
         - aulas/lab09/redesneurais.md
         - aulas/lab09/backpropagation.md
         - Demo API MNIST: aulas/lab09/demo.md
     - Aula 8 - CNN: aulas/aula8.md
+    - Aula 9 - Deploy de Modelos: aulas/aula9.md
+    - Aula 10 - Transfer Learning: aulas/aula10.md
+    - Aula 11 - Vision Transformers: aulas/aula11.md
+    # - Aula 12 - Detecção de Objetos: aulas/aula12.md
+    # - Aula 13 - Dataset Próprio: aulas/aula13.md
+    # - Aula 14 - Treinamento de Detector: aulas/aula14.md
+    # - Aula 15 - Vídeo e Rastreamento: aulas/aula15.md
+    # - Aula 16 - Segmentação: aulas/aula16.md
+    # - Aula 17 - Realidade Aumentada: aulas/aula17.md
+    # - Aula 18 - AR Aplicação: aulas/aula18.md
 
   - Recursos:
     - Bibliografia: recursos/bibliografia.md
