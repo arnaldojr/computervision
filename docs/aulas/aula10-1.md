@@ -2,9 +2,11 @@
 
 Nesta atividade, você deverá aplicar os conceitos de **Transfer Learning** estudados na aula anterior em um novo problema de classificação.
 
-Faça o download do notebook-base e siga as instruções para desenvolver sua solução.
+Faça o download do notebook base e siga as instruções para desenvolver sua solução.
 
-[Baixar notebook-base](lab12/desafio_transfer_learning_eurosat.ipynb){ .md-button .md-button--primary }
+[Abrir no Google Colab](https://colab.research.google.com/github/arnaldojr/computervision/blob/main/docs/aulas/lab12/desafio_transfer_learning_eurosat.ipynb){ .md-button .md-button--primary }
+
+[Baixar notebook](lab12/desafio_transfer_learning_eurosat.ipynb){ .md-button download="desafio_transfer_learning_eurosat.ipynb" }
 
 ---
 
