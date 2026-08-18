@@ -5,6 +5,11 @@ Material da Aula 11 — primeiro vamos construir a ideia de um Vision Transforme
 Ao final desta primeira parte, você deverá conseguir explicar como uma imagem vira uma sequência de tokens e calcular quantos tokens são produzidos. Bibliotecas como `timm` e Hugging Face aparecem somente depois dessa etapa.
 
 [Lab 13 — Vision Transformers (download)](lab13/lab13.zip){ .md-button .md-button--primary }
+    
+[Abrir no Google Colab](https://colab.research.google.com/github/arnaldojr/computervision/blob/main/docs/aulas/lab13/notebook_vit2.ipynb){ .md-button .md-button--primary }
+
+[Baixar notebook](lab13/notebook_vit2.ipynb){ .md-button download="notebook_vit2.ipynb" }
+
 
 ---
 
