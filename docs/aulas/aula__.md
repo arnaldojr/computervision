@@ -1,11 +1,67 @@
 ## Vision Transformers (ViT)
 
-Material da Aula 11 — Inferência com ViT pré-treinado e fine-tuning com DeiT-Tiny.
-Entendemos como a arquitetura Transformer, originalmente criada para NLP, conquistou visão computacional.
+Material da Aula 11 — primeiro vamos construir a ideia de um Vision Transformer; depois conectaremos essa ideia ao PyTorch e ao transfer learning.
+
+Ao final desta primeira parte, você deverá conseguir explicar como uma imagem vira uma sequência de tokens e calcular quantos tokens são produzidos. Bibliotecas como `timm` e Hugging Face aparecem somente depois dessa etapa.
 
 [Lab 13 — Vision Transformers (download)](lab13/lab13.zip){ .md-button .md-button--primary }
 
 ---
+
+### Uma imagem pode virar uma sequência?
+
+Antes de falar em modelos, observe a transformação abaixo. O simulador usa uma imagem pequena para deixar explícito o que normalmente fica escondido dentro de uma implementação.
+
+<div id="vit-patches-widget" class="vit-widget" markdown="1">
+<div class="vit-widget__intro">
+    <strong>Experimente a ideia central do ViT</strong>
+    <span>Escolha um exemplo ou desenhe na imagem. Depois clique em um patch para acompanhar sua posição na sequência.</span>
+</div>
+<div class="vit-widget__controls">
+    <button type="button" data-vit-example="object">Exemplo: objeto</button>
+    <button type="button" data-vit-example="diagonal">Exemplo: diagonal</button>
+    <button type="button" data-vit-clear>Limpar</button>
+    <label for="vit-patch-size">Tamanho do patch</label>
+    <input id="vit-patch-size" data-vit-patch-size type="range" min="2" max="8" step="2" value="4">
+    <output data-vit-patch-value>4 × 4 pixels</output>
+</div>
+<div class="vit-widget__boards">
+    <figure>
+        <canvas data-vit-input width="320" height="320" aria-label="Imagem para desenhar"></canvas>
+        <figcaption>1. A imagem de entrada</figcaption>
+    </figure>
+    <figure>
+        <canvas data-vit-patches width="320" height="320" aria-label="Imagem dividida em patches"></canvas>
+        <figcaption>2. A imagem dividida em patches</figcaption>
+    </figure>
+    <figure class="vit-widget__tokens">
+        <canvas data-vit-tokens width="640" height="120" aria-label="Sequência de tokens"></canvas>
+        <figcaption>3. Os patches são organizados como uma sequência</figcaption>
+    </figure>
+</div>
+<div class="vit-widget__readout">
+    <span data-vit-status></span>
+    <strong data-vit-selected></strong>
+    <span data-vit-coordinates></span>
+    <span><b data-vit-patch-count></b> | imagem: <b data-vit-image-shape></b> | sequência: <b data-vit-token-shape></b></span>
+</div>
+</div>
+
+O ponto importante não é a imagem desenhada. É a mudança de representação:
+
+1. começamos com pixels organizados em uma grade;
+2. dividimos a grade em regiões menores, os **patches**;
+3. colocamos essas regiões em uma ordem;
+4. cada região será transformada em um vetor, chamado **token**.
+
+!!! question "Pare e preveja"
+        Se uma imagem tiver tamanho $224 \times 224$ e cada patch medir $16 \times 16$, quantos patches aparecerão na sequência? Use o simulador e depois confira:
+
+        $$
+        N = \frac{224}{16} \times \frac{224}{16} = 14 \times 14 = 196
+        $$
+
+O simulador ainda não está fazendo classificação nem atenção. Essa separação é proposital: primeiro precisamos entender a entrada do Transformer. A próxima pergunta será como o modelo sabe de onde veio cada token.
 
 ### De CNNs para Transformers
 
