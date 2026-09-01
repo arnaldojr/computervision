@@ -322,6 +322,9 @@ for box, confidence, class_id in detections:
     ...
 ```
 
+!!! warning "DOCUMENTAÇÃO"
+  [Acesse o site da documetação oficial](https://docs.ultralytics.com/modes/predict).
+
 ---
 
 ## 5. Detecção em vídeo
@@ -406,6 +409,11 @@ As caixas mudam porque a pessoa se move, mas o ID tenta permanecer `7`. É isso 
 
 !!! warning "ID não é uma garantia"
   O rastreador pode perder ou trocar um ID quando o objeto fica oculto, sai da imagem, aparece muito pequeno ou se sobrepõe a outro objeto. Por isso, um contador baseado em tracking também pode errar.
+
+
+
+!!! warning "DOCUMENTAÇÃO"
+  [Acesse o site da documetação oficial](https://docs.ultralytics.com/modes/track).
 
 ---
 
