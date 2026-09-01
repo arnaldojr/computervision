@@ -81,6 +81,7 @@ extra_javascript:
   - js/backprop-widget.js
   - js/cnn-widget.js
   - js/vit-patches-widget.js
+  - js/deteccao-widget.js
 
 plugins:
   - search
@@ -115,7 +116,7 @@ nav:
     - Aula 10 - Transfer Learning: aulas/aula10.md
     - Aula 10.1 - Transfer Learning EuroSAT: aulas/aula10-1.md
     - Aula 11 - Vision Transformers: aulas/aula11.md
-    # - Aula 12 - Detecção de Objetos: aulas/aula12.md
+    - Aula 12 - Detecção de Objetos: aulas/aula12.md
     # - Aula 13 - Dataset Próprio: aulas/aula13.md
     # - Aula 14 - Treinamento de Detector: aulas/aula14.md
     # - Aula 15 - Vídeo e Rastreamento: aulas/aula15.md
