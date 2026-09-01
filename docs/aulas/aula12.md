@@ -11,12 +11,13 @@ Até agora, nossos modelos respondiam **qual é o objeto principal da imagem?** 
 [Baixar Video1](lab14/pessoa_estacao.mp4){ .md-button download="pessoa_estacao.mp4" }
 
 [Baixar Video2](lab14/pessoa_rua.mp4){ .md-button download="pessoa_rua.mp4" }
+
+
 ### Execução local em tempo real
 
 Para acompanhar o vídeo quadro a quadro em uma janela do OpenCV, use o script [contagem_local.py](lab14/contagem_local.py). No terminal, dentro da pasta `docs/aulas/lab14`:
 
 ```bash
-pip install -r requirements.txt
 python contagem_local.py
 ```
 
@@ -343,6 +344,32 @@ Isso produz um vídeo anotado, mas ainda não resolve contagem. Se uma pessoa ap
 ---
 
 ## 6. Rastreamento: dando identidade às caixas
+
+No simulador, avance pelos quadros e compare os dois modos. Em **somente detecção**, uma caixa não carrega informação sobre o quadro anterior. Em **detecção + tracking**, o rastreador associa cada caixa atual a uma caixa anterior e tenta manter o mesmo ID.
+
+<div id="tracking-widget" style="border: 1px solid #b7c6c2; padding: 16px; margin: 20px 0; background: #f8fbf9;" markdown="1">
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;">
+  <button type="button" data-tracking-previous>Quadro anterior</button>
+  <button type="button" data-tracking-next>Próximo quadro</button>
+  <button type="button" data-tracking-play>Reproduzir</button>
+  <label><input data-tracking-mode type="checkbox"> Detecção + tracking</label>
+  <label><input data-tracking-occlusion type="checkbox"> Simular oclusão</label>
+  <strong data-tracking-frame></strong>
+</div>
+<canvas data-tracking-canvas width="600" height="280" style="max-width: 100%; height: auto; border: 1px solid #b7c6c2;" aria-label="Simulador de rastreamento entre quadros"></canvas>
+<div style="display: grid; gap: 5px; margin-top: 10px;">
+  <span data-tracking-summary></span>
+  <strong data-tracking-events></strong>
+</div>
+</div>
+
+### Experimento guiado
+
+1. Deixe **Detecção + tracking** desmarcado e avance alguns quadros. Há duas pessoas, mas há uma maneira de identificar a mesma pessoa ao longo do tempo?
+2. Marque **Detecção + tracking**. Observe as cores, os IDs e as setas: cada seta é a associação entre uma detecção atual e uma detecção anterior.
+3. Ative **Simular oclusão** e avance até o quarto quadro. O que o rastreador deixa de observar? O ID continua sendo uma certeza?
+
+O simulador usa o IoU entre caixas de quadros consecutivos como regra simplificada de associação: a caixa mais parecida com uma detecção anterior recebe o mesmo ID. Rastreadores reais também podem usar aparência, velocidade e direção, mas a pergunta central é a mesma: **qual objeto atual corresponde a qual objeto anterior?**
 
 Em detecção pura, cada quadro é independente. Mesmo que uma pessoa permaneça visível por vários quadros, o detector devolve apenas uma nova caixa para ela a cada vez:
 
