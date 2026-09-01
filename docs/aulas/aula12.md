@@ -81,60 +81,233 @@ Essa segunda forma é útil quando queremos acompanhar o centro de um objeto no 
 
 ---
 
-## 3. Explore: IoU, confiança e NMS
+## 3. Explore: confiança, IoU e NMS
 
-Use o simulador abaixo. Arraste uma caixa prevista para aproximá-la ou afastá-la da anotação real. Em seguida, altere os limiares de confiança e IoU para observar quais previsões sobrevivem.
+Use o simulador abaixo para explorar algumas etapas importantes do pós-processamento de um detector.
+
+Arraste as caixas previstas para observar como a sobreposição muda. O simulador utiliza o **IoU em dois contextos diferentes**: para comparar uma previsão com a anotação real e para comparar previsões da mesma classe durante o NMS.
+
+Em seguida, altere os limiares de confiança e de IoU para NMS e observe quais previsões permanecem no resultado final.
 
 <div id="deteccao-widget" style="border: 1px solid #b7c6c2; padding: 16px; margin: 20px 0; background: #f8fbf9;" markdown="1">
+
 <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;">
-  <label>Confiança mínima <input data-confidence-threshold type="range" min="0" max="100" step="5" value="50"> <output data-confidence-value>50%</output></label>
-  <label>IoU para NMS <input data-iou-threshold type="range" min="0" max="100" step="5" value="50"> <output data-iou-value>50%</output></label>
+
+  <label>
+    Confiança mínima
+    <input data-confidence-threshold type="range" min="0" max="100" step="5" value="50">
+    <output data-confidence-value>50%</output>
+  </label>
+
+  <label>
+    IoU para NMS
+    <input data-iou-threshold type="range" min="0" max="100" step="5" value="50">
+    <output data-iou-value>50%</output>
+  </label>
+
   <button type="button" data-reset-boxes>Reiniciar</button>
+
 </div>
-<canvas data-detection-canvas width="380" height="260" style="max-width: 100%; height: auto; border: 1px solid #b7c6c2; cursor: grab;" aria-label="Simulador de caixas delimitadoras"></canvas>
+
+<canvas
+  data-detection-canvas
+  width="380"
+  height="260"
+  style="max-width: 100%; height: auto; border: 1px solid #b7c6c2; cursor: grab;"
+  aria-label="Simulador de caixas delimitadoras">
+</canvas>
+
 <div style="display: grid; gap: 5px; margin-top: 10px;">
-  <span>IoU entre a melhor previsão e a anotação: <strong data-overlap-value></strong></span>
+
+  <span>
+    IoU previsão × Ground Truth:
+    <strong data-overlap-value></strong>
+  </span>
+
   <span data-nms-result></span>
+
 </div>
+
 </div>
 
 ### IoU: o quanto duas caixas coincidem?
 
-O **Intersection over Union** compara a área comum entre duas caixas com a área total ocupada por elas:
+O **Intersection over Union (IoU)** mede o grau de sobreposição entre duas caixas:
 
 $$
-IoU = \frac{\text{área da interseção}}{\text{área da união}}
+IoU =
+\frac{\text{área da interseção}}
+{\text{área da união}}
 $$
 
-- $IoU = 0$: as caixas não se tocam;
+- $IoU = 0$: as caixas não se sobrepõem;
 - $IoU = 1$: as caixas são idênticas;
-- quanto maior o IoU, melhor a localização prevista.
+- valores intermediários representam diferentes níveis de sobreposição.
 
-A caixa tracejada no simulador é uma anotação humana, também chamada de **ground truth**. As caixas coloridas são hipóteses do detector.
+No simulador, o IoU aparece em **dois contextos diferentes**.
 
-### Confiança e NMS: por que caixas desaparecem?
+#### Previsão × Ground Truth
 
-O detector frequentemente propõe mais de uma caixa para o mesmo objeto. Primeiro, removemos previsões abaixo de uma confiança mínima. Depois, o **Non-Maximum Suppression (NMS)** mantém a caixa mais confiante e remove caixas muito parecidas com ela.
+A caixa tracejada representa uma anotação humana, também chamada de **ground truth**. As caixas coloridas representam previsões produzidas pelo detector.
 
-1. ordene as caixas por confiança;
-2. mantenha a melhor;
-3. calcule o IoU das demais com ela;
-4. remova caixas cujo IoU esteja acima do limiar;
-5. repita para as caixas restantes.
+Quando comparamos uma previsão com o ground truth, o IoU indica quanto a localização prevista coincide com a localização anotada.
 
-!!! tip "Experimento"
-    Com confiança mínima em `50%`, diminua o limiar de IoU. Em que ponto a segunda caixa da pessoa deixa de aparecer? Agora aumente a confiança mínima para `80%`: o que acontece com a previsão de mochila?
+Por exemplo:
+
+```text
+Ground Truth
+      ↕
+     IoU
+      ↕
+Previsão do modelo
+```
+
+Quanto maior o IoU nesse caso, maior é a sobreposição entre a previsão e a anotação real.
+
+#### Previsão × previsão
+
+O IoU também pode ser calculado entre duas previsões do próprio detector.
+
+Isso é importante porque um detector pode produzir várias caixas para o mesmo objeto:
+
+```text
+pessoa 92%
+pessoa 74%
+```
+
+Se essas duas caixas apresentam grande sobreposição, elas provavelmente representam o mesmo objeto.
+
+Esse segundo uso do IoU aparece no **Non-Maximum Suppression (NMS)**.
 
 ---
+
+### Confiança: quais previsões devem continuar?
+
+Cada previsão possui um valor de confiança.
+
+Por exemplo:
+
+```text
+pessoa   92%
+pessoa   74%
+mochila  38%
+```
+
+O **limiar de confiança** determina quais previsões continuarão no pipeline.
+
+Se utilizarmos:
+
+```text
+confiança mínima = 50%
+```
+
+teremos:
+
+```text
+pessoa 92%  -> permanece
+pessoa 74%  -> permanece
+mochila 38% -> removida
+```
+
+Essa etapa acontece **antes do NMS**.
+
+---
+
+### NMS: por que algumas caixas desaparecem?
+
+Mesmo depois do filtro de confiança, ainda pode existir mais de uma caixa para o mesmo objeto.
+
+O **Non-Maximum Suppression (NMS)** reduz essas duplicações.
+
+De forma simplificada, o processo é:
+
+1. remova as previsões abaixo do limiar de confiança;
+2. ordene as caixas restantes pela confiança;
+3. mantenha a caixa mais confiante;
+4. compare-a com outras caixas da mesma classe;
+5. calcule o IoU entre essas caixas;
+6. remova as caixas cujo IoU ultrapasse o limiar de NMS;
+7. repita o processo com as caixas restantes.
+
+Considere:
+
+```text
+pessoa 92%
+pessoa 74%
+```
+
+Suponha que o IoU entre as duas previsões seja:
+
+```text
+IoU = 67,7%
+```
+
+e o limiar do NMS seja:
+
+```text
+50%
+```
+
+Como:
+
+```text
+67,7% > 50%
+```
+
+as caixas apresentam sobreposição suficiente para serem consideradas duplicadas.
+
+O NMS mantém:
+
+```text
+pessoa 92%
+```
+
+e remove:
+
+```text
+pessoa 74%
+```
+
+A caixa de maior confiança permanece.
+
+!!! note "Ground truth e NMS"
+
+    O ground truth é utilizado para avaliar a localização prevista durante treinamento ou avaliação do modelo. Ele não participa do NMS durante a inferência. O NMS compara previsões produzidas pelo próprio detector.
+
+!!! tip "Experimento"
+
+    Comece com a confiança mínima em `50%`.
+
+    Altere o limiar de IoU para NMS e observe as duas caixas da pessoa. Em que ponto a segunda caixa deixa de aparecer?
+
+    Agora reduza a confiança mínima para `30%`. A previsão de mochila aparece?
+
+    Aumente a confiança mínima para `40%`. O que acontece com a mochila?
+
+    Por fim, coloque a confiança mínima em `80%`. O que acontece com a previsão de pessoa com `74%` de confiança?
+
+    Nesse último caso, ela chegou a participar do NMS ou foi eliminada antes?
 
 ## 4. O pipeline de detecção
 
 Um detector pré-treinado recebe uma imagem e executa este fluxo:
 
 ```text
-imagem -> pré-processamento -> modelo -> caixas candidatas
-       -> filtro de confiança -> NMS -> caixas, classes e confianças finais
+imagem
+   ↓
+pré-processamento
+   ↓
+modelo
+   ↓
+caixas candidatas
+   ↓
+filtro de confiança
+   ↓
+NMS
+   ↓
+caixas, classes e confianças finais
 ```
+
 
 Na prática, começaremos com um detector YOLO pré-treinado no conjunto COCO. O COCO contém classes cotidianas como `person`, `car`, `bicycle`, `dog` e `bottle`.
 
