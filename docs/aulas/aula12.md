@@ -2,9 +2,31 @@
 
 Até agora, nossos modelos respondiam **qual é o objeto principal da imagem?** Nesta aula, a pergunta muda: **quais objetos aparecem e onde está cada um?**
 
+[Lab 14 — Código](lab14/lab14.zip){ .md-button .md-button--primary }
+
 [Abrir no Google Colab](https://colab.research.google.com/github/arnaldojr/computervision/blob/main/docs/aulas/lab14/notebook_deteccao_contagem.ipynb){ .md-button .md-button--primary }
 
 [Baixar notebook](lab14/notebook_deteccao_contagem.ipynb){ .md-button download="notebook_deteccao_contagem.ipynb" }
+
+[Baixar Video1](lab14/pessoa_estacao.mp4){ .md-button download="pessoa_estacao.mp4" }
+
+[Baixar Video2](lab14/pessoa_rua.mp4){ .md-button download="pessoa_rua.mp4" }
+### Execução local em tempo real
+
+Para acompanhar o vídeo quadro a quadro em uma janela do OpenCV, use o script [contagem_local.py](lab14/contagem_local.py). No terminal, dentro da pasta `docs/aulas/lab14`:
+
+```bash
+pip install -r requirements.txt
+python contagem_local.py
+```
+
+O script abre o vídeo padrão da pasta e exibe caixas, IDs, linha de contagem e total em tempo real. Durante a execução:
+
+- `Espaço`: pausa ou continua o vídeo;
+- `R`: reinicia a contagem;
+- `Q` ou `Esc`: fecha a janela.
+
+Para experimentar, altere no início de `contagem_local.py` as configurações `VIDEO_PATH`, `TARGET_CLASS`, `CONFIDENCE_THRESHOLD` e `LINE_RATIO`. Para usar a webcam, altere `USE_WEBCAM` para `True`.
 
 ---
 
@@ -147,7 +169,47 @@ Isso produz um vídeo anotado, mas ainda não resolve contagem. Se uma pessoa ap
 
 ---
 
-## 6. Contagem por cruzamento de linha
+## 6. Rastreamento: dando identidade às caixas
+
+Em detecção pura, cada quadro é independente. Mesmo que uma pessoa permaneça visível por vários quadros, o detector devolve apenas uma nova caixa para ela a cada vez:
+
+```python
+# Detecção: caixas, classes e confianças do quadro atual.
+result = model(frame, conf=0.40)[0]
+boxes = result.boxes.xyxy
+```
+
+Para acompanhar objetos no tempo, usamos um **rastreador**. Ele recebe as detecções de vários quadros e tenta associar cada caixa nova a uma caixa anterior. Quando a associação funciona, o objeto recebe um ID persistente:
+
+```python
+# Rastreamento: além das caixas, cada objeto recebe um ID.
+tracked = model.track(frame, persist=True, conf=0.40)[0]
+track_ids = tracked.boxes.id
+```
+
+Imagine uma pessoa atravessando cinco quadros:
+
+```text
+quadro 1: pessoa, caixa A, ID 7
+quadro 2: pessoa, caixa B, ID 7
+quadro 3: pessoa, caixa C, ID 7
+```
+
+As caixas mudam porque a pessoa se move, mas o ID tenta permanecer `7`. É isso que permite dizer que as três detecções representam uma pessoa, e não três pessoas diferentes.
+
+### O que `persist=True` faz?
+
+`persist=True` mantém a memória do rastreador entre uma chamada e a próxima. Sem essa memória, o rastreador começaria do zero em cada quadro e os IDs não teriam utilidade para uma contagem.
+
+!!! question "Observe no laboratório"
+  Antes de contar qualquer objeto, execute a etapa de rastreamento do notebook. Observe um objeto por alguns segundos e responda: ele mantém o mesmo ID? Em que situação o ID pode desaparecer ou mudar?
+
+!!! warning "ID não é uma garantia"
+  O rastreador pode perder ou trocar um ID quando o objeto fica oculto, sai da imagem, aparece muito pequeno ou se sobrepõe a outro objeto. Por isso, um contador baseado em tracking também pode errar.
+
+---
+
+## 7. Contagem por cruzamento de linha
 
 Nossa primeira aplicação usa uma regra espacial simples:
 
@@ -169,5 +231,5 @@ Uma regra inicial para uma linha horizontal em $y = L$ é:
 cruzou_para_baixo = centro_anterior_y < L and centro_atual_y >= L
 ```
 
-Essa regra funciona para uma demonstração curta, mas tem uma limitação: precisamos saber qual centro atual corresponde ao centro anterior. A extensão natural é usar um rastreador que atribui um ID persistente a cada objeto.
+Agora podemos usar o ID persistente. Para cada ID, guardamos sua posição anterior e registramos a contagem apenas na primeira vez em que ele cruza a linha. Sem tracking, não saberíamos se o centro atual pertence ao mesmo objeto do quadro anterior.
 
