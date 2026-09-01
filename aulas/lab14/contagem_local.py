@@ -8,7 +8,7 @@ from ultralytics import YOLO
 
 
 # Altere estas configuracoes para experimentar outros videos e classes.
-VIDEO_PATH = "pessoa_estacao.mp4"
+VIDEO_PATH = "pessoa_rua.mp4"
 USE_WEBCAM = False
 TARGET_CLASS = "person"
 CONFIDENCE_THRESHOLD = 0.40
