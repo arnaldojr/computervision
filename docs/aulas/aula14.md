@@ -2,7 +2,8 @@
 
 Nas aulas anteriores, usamos um detector pronto e criamos um dataset anotado. Agora vamos conectar essas duas coisas: usar as imagens e as caixas que você produziu para ajustar um modelo YOLO ao seu problema.
 
-[Abrir notebook de referência](lab16/yolo-treino.ipynb){ .md-button .md-button--primary }
+[Abrir no Google Colab](https://colab.research.google.com/github/arnaldojr/computervision/blob/main/docs/aulas/lab16/yolo-treino.ipynb){ .md-button .md-button--primary }
+
 
 [Baixar notebook](lab16/yolo-treino.ipynb){ .md-button download="yolo-treino.ipynb" }
 
